@@ -1,0 +1,48 @@
+
+# Set input
+    # from .in file, else from jld file
+    setInputParameters = true
+
+    # from input files, else from jld inputhpath
+    hydroSystemFromFile = true
+
+    # Make new, else from jld file
+    createMarkovModel = true
+
+    drawScenarios = true		
+    drawOutofSampleScen = false
+    # from previous result files
+    useScenariosFromDataStorage = false
+    # from input file
+    useHistoricScen = false
+
+# Solver settings
+    solveMIP = true
+    #If using SOS2
+
+# SDP settings
+    solveSDP = true
+    useWaterValues = false
+    #Option to save results from each time decision problem is solved in SDP
+    DebugSP = false
+
+# SIM settings
+    simulate = true
+    parallellSim = false
+
+# Environmental constraint settings
+    envConst = true
+    #flowDependentqMin = false
+    #if using makow model made without early activation to solve SDP algorithm with early activation
+    extendScenarioLattice = false
+    ramping_constraints = false
+
+# Additional functionalities
+    production_factors= true
+    water_levels = true
+    general_plots= false
+    save_excel = true
+    error_evaluation = false
+    
+
+  
