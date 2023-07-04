@@ -5,24 +5,24 @@
 
 # parameters 
 @with_kw struct InputParam{F<:Float64,I<:Int}
-  NSeg::Any                                       #Number of segments to divide the resevoir into to define states
+  NSeg::Any                                     #Number of segments to divide the resevoir into to define states
   NPrice::I                                     #Number of price scenarios
-  NStage::I                                     #Number of stages
-  NHoursStage::I                                #Number of hours in one stage
-  NHoursStep::I                                 #Number of hours in each time step within a stage
+  NStage::I                                     #Number of stages (52)
+  NHoursStage::I                                #Number of hours in one stage (168)
+  NHoursStep::I                                 #Number of hours in each time step within a stage (3)
   Big::F                                        #A big number
   AlphaMax::F                                   #Bounds for expected future value, initial value
   PenSpi::F                                     #Small penalty for spillage
   PenQ::F                                       #Large penalty for tanking
-  NStep::I                                      #Number of steps within each stage
-  MM3Week::F                                    #Conversion factor week
-  MM3Step::F                                    #Conversion factor time step
-  StepFranc::Any                                #Time Step fraction of week
+  NStep::I                                      #Number of steps within each stage (8x7=56)
+  MM3Week::F                                    #Conversion factor week: da m3/s a Mm3 in una settimana
+  MM3Step::F                                    #Conversion factor time step: da m3/s a Mm3 in uno step (3 ore)
+  StepFranc::Any                                #Time Step fraction of week: matrice distribuzione inflow sulla settimana
   NStates::I                                    #Number of inflow scnearios
   MaxIt::I                                      #Max number of iterations
   conv::F                                       #Convergence criterium
-  NSamples::I                                   #Number of samples drawn when making scenario lattice
-  NSimScen::I                                   #Number of scenarios simulated in sim
+  NSamples::I                                   #Number of samples drawn when making scenario lattice (10000 scenari)
+  NSimScen::I                                   #Number of scenarios simulated in sim (100 scenari)
   LimitPump::I
 end
 
@@ -47,14 +47,14 @@ end
 
 # case settings
 struct HydroData
-  NMod::Any
-  NUp::Any
+  NMod::Any #Numero bacini
+  NUp::Any  #Numero bacinni sopra
   Eff::Any         # MW/m3/s
   NDSeg::Any
   DisMaxSeg::Any   # m3/s
-  MaxRes::Any      #Mm3/s
+  MaxRes::Any      # Mm3/s
   Scale::Any
-  ResInit0::Any    #Mm3
+  ResInit0::Any    # Mm3
   qMin::Any
   Station_with_pump::Any
   NDSegPump::Any
@@ -62,7 +62,7 @@ struct HydroData
   EffPump::Any
   Pump_direction::Any
   N_min_flows::Any
-  Activation_weeks::Any
+  Activation_weeks::Any # Riferiti a qmin
   Min_flows::Any
 end
 
@@ -125,14 +125,14 @@ end
 
 # Enivronmental constraint: reservoir dependent max. discharge constraint
 struct maxDishargeConstraint
-  envMod::Int #module constrrain it imposed on
-  firstAct::Int #first week where constraint can be activated
-  lastAct::Int #last week where ocnstraint can be activated
-  lastMaxDisch::Int #last week where max discharge can be active
-  lastNoDecrease::Int #first week where no res level decrease can be activate
-  actLevel::Float64 #Inflow level that avtivates constraint
-  deactLevel::Float64 #reservoir level that deactivated constraint
-  maxDischarge::Float64 #max discharge limit
+  envMod::Int                                                             #module constrain it imposed on
+  firstAct::Int                                                           #first week where constraint can be activated
+  lastAct::Int                                                            #last week where constraint can be activated
+  lastMaxDisch::Int                                                       #last week where max discharge can be activeted
+  lastNoDecrease::Int                                                     #first week where no res level decrease can be activated
+  actLevel::Float64                                                       #Inflow level that activates constraint
+  deactLevel::Float64                                                     #reservoir level that deactivated constraint
+  maxDischarge::Float64                                                   #max discharge limit
 end
 
 # Enivronmental constraint: inflow dependent min. flow constraint
@@ -212,7 +212,7 @@ struct StageProblemTwoRes
   alpha::Any
   gamma::Any
   AlphaCon::Any
-  beta_upper::Any
+  beta_upper::Any # Per linearizzare in SDP
   beta_lower::Any
  # χ::Any
   maxRelease::Any

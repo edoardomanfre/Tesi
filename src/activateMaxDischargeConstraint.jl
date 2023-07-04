@@ -76,7 +76,7 @@ function activate_EnvConstraint_sim(                                            
       SP = relax_dichargeLimit(SP, envData.envMod, NStep) #scarico as much as I can
       add_dischargeLimitPump = false
     elseif (Reservoir[envData.envMod, iScen, t-1, end] + scenarios[iScen][t, 1] * HY.Scale[envData.envMod]) >= envData.deactLevel
-      SP = add_minRes_init(SP, envData, NStep)    #a fine settimana devo raggiungere il limite iStep=NStep
+      SP = add_minRes_init(SP, envData, NStep)    #a fine settimana devo raggiungere il limite iStep=NStep: volume >= 87.44
       SP = relax_dichargeLimit(SP, envData.envMod, NStep) #posso turbinare
       add_dischargeLimitPump = false        #non metto limiti sullo scarico della pompa
     else
@@ -106,15 +106,15 @@ end
 #----------------------------------------------
 
 # discharge limit
-function add_dichargeLimit(SP, envData, NStep)                                                # attivo i vincoli sullo scarico
-  iMod = envData.envMod                                                                             # iMod=2 perche' il vincolo e' sul bacino inferiore
+function add_dichargeLimit(SP, envData, NStep)                         # attivo i vincoli sullo scarico
+  iMod = envData.envMod                                                # iMod=2 perche' il vincolo e' sul bacino inferiore
   for iStep = 1:NStep
     set_normalized_rhs(SP.maxRelease[envData.envMod, iStep], envData.maxDischarge)
   end
   return SP
 end
 
-function add_disLimitPump(SP, NStep)                                                # attivo i vincoli sullo scarico                                                                         
+function add_disLimitPump(SP, NStep)                                   # attivo i vincoli sullo scarico                                                                         
   for iStep = 1:NStep
     set_normalized_rhs(SP.maxReleasePump[iStep], 0)
   end
@@ -122,7 +122,7 @@ function add_disLimitPump(SP, NStep)                                            
 end
 
 #=
-function add_dischargeLimitPump(SP,NStep)                                                # attivo i vincoli sullo scarico                                                                           # iMod=2 perche' il vincolo e' sul bacino inferiore
+function add_dischargeLimitPump(SP,NStep)                              # attivo i vincoli sullo scarico                                                                           # iMod=2 perche' il vincolo e' sul bacino inferiore
   for iStep = 1:NStep
     set_normalized_rhs(SP.pumpdischarge[iStep],0)
   end
@@ -130,7 +130,7 @@ function add_dischargeLimitPump(SP,NStep)                                       
 end
 =#
 
-function relax_dichargeLimit(SP, iMod, NStep)                                                       # disattivo i vincoli sullo scarico
+function relax_dichargeLimit(SP, iMod, NStep)                          # disattivo i vincoli sullo scarico
   #    iMod = envData.envMod
   for iStep = 1:NStep
     set_normalized_rhs(
@@ -141,7 +141,7 @@ function relax_dichargeLimit(SP, iMod, NStep)                                   
   return SP
 end
 
-function relax_disLimitPump(SP,NStep)                                                       # disattivo i vincoli sullo scarico
+function relax_disLimitPump(SP,NStep)                                  # disattivo i vincoli sullo scarico
   #    iMod = envData.envMod
   for iStep = 1:NStep
     set_normalized_rhs(
@@ -153,7 +153,7 @@ function relax_disLimitPump(SP,NStep)                                           
 end
 
 #=
-function relax_dischargeLimitPump(SP,NStep)                                                       # disattivo i vincoli sullo scarico
+function relax_dischargeLimitPump(SP,NStep)                            # disattivo i vincoli sullo scarico
   for iStep = 1:NStep
     for tSeg=1:HY.NDSegPump
     set_normalized_rhs(

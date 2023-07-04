@@ -19,15 +19,15 @@
 # SDP algorithm, two reservoir system
 function SDP(
   InputParameters,
-  SolverParameters,
-  HY,
-  scenarioLatticeData,
-  ResSeg,
-  PriceScale,
-  envDataList,
+  SolverParameters,       #CPLEX
+  HY,                     #Hydraulic data dei due power system
+  scenarioLatticeData,    #Tutti i possibili scenari generati con valori di inflow e prezzi
+  ResSeg,                 #5x5=25 possibili combinazioni di volumi
+  PriceScale,             #Matrice 52x7 o 52x56
+  envDataList,            #Lista dei vincoli ambientali con relativi valori
   runMode,
   FinalResPath,
-  warmstart = 0,
+  warmstart = 0,          #Calcola tutto dall'inizio. Se non 0 prende valori di WV già salvati
  )
 
   # input parameters
@@ -44,12 +44,12 @@ function SDP(
   ScenarioLattice = scenarioLatticeData.ScenarioLattice
 
   # make arrays for results
-  AlphaTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg))                                            # Creo una matrice nulla 53x5(o10)x25
-  WVTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg), HY.NMod)                                      # Creo una matrice 53x5x25x2 (una per upper e l'altra per lower reservoir)
+  AlphaTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg))                     # Creo una matrice nulla 53x5(o10)x25
+  WVTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg), HY.NMod)               # Creo una matrice 53x5x25x2 (una per upper e l'altra per lower reservoir)
 
   if warmstart != 0
     println("Using previous watervalues as startpoint..")
-    if size(warmstart)[2] == size(WVTable)[2]                                                                     # Se ho gia' dei valori di WVT posso cominiciare gia' da quelli invece di fare un'altra matrice nulla
+    if size(warmstart)[2] == size(WVTable)[2]                                              # Se ho gia' dei valori di WVT posso cominiciare gia' da quelli invece di fare un'altra matrice nulla
       WVTable = warmstart
       WVTable[end, :, :, :, :] = warmstart[1, :, :, :, :]
       AlphaTable[end, :, :, :] = update_futureValue(WVTable, ResSeg, NEnvStates)
@@ -57,7 +57,7 @@ function SDP(
     else
       WVTable[:, 1:NStates, :, :, :] = warmstart
       WVTable[end, 1:NStates, :, :, :] = warmstart[1, :, :, :, :]
-      AlphaTable[end, :, :, :] = update_futureValue(WVTable, ResSeg, NEnvStates)                                  # Se il codice crascia, posso iniizare da valori gia' esistenti
+      AlphaTable[end, :, :, :] = update_futureValue(WVTable, ResSeg, NEnvStates)           # Se il codice crascia, posso iniizare da valori gia' esistenti
     end
   end
 
@@ -97,32 +97,32 @@ function SDP(
   n = 1
   optimal = true
  
-  while n <= MaxIt                                                                                                             # iterate until convergence or max iterations
+  while n <= MaxIt                                                          # Comincio ad iterare (MaxIt=100) fino a convergenza o numero massimo di iterazioni                                                                                        
     optimal = true
     println("Iteration: ", n)
 
     @time begin
-      for t = NStage:-1:1                                                                                                      # solve from last to first stage
+      for t = NStage:-1:1                                                   # Itero dalla settimana 52 e vado indietro                                                                                        
         @time begin
-          MIP_counter_t = 0  
+          MIP_counter_t = 0                                                 # Quanti MIP sono stati risolti per a settimana
 
-          add_dischargeLimitPump = false                                                                                                  # Quanti MIP sono stati risolti per a settimana
+          add_dischargeLimitPump = false                                                                                                 
 
-          NStatesTo = size(ScenarioLattice.states[t])[1]                                                                       # total number of stochastic and environmental states in current stage    (5 or 10)                                                                            # I have 5 states for each week - in alcuni casi ho l'espansione 
+          NStatesTo = size(ScenarioLattice.states[t])[1]                    # total number of stochastic and environmental states in current stage (5 or 10): 5 possibili stati per ogni settimana                                                                            # I have 5 states for each week - in alcuni casi ho l'espansione 
           
-          for nfrom = 1:length(ResSeg)
-            # for all reservoir states (at beginning of stage)                                                                 # Iteration considering all 25 combinations of the reservoirs
-            Alpha = zeros(NStatesTo)                                                                                           # Create the matrix Alpha with dim.5 
+          for nfrom = 1:length(ResSeg)                                      # Itero per tutte le combinazioni di volume
+            # for all reservoir states (at beginning of stage)                                                                 
+            Alpha = zeros(NStatesTo)                                        # Create the matrix Alpha with dim.5 
             
-            for iState = 1:NStatesTo                                                                                                      # NStatesTo = 5 - evaluate for each state of the given stage
+            for iState = 1:NStatesTo                                        # Comincio un ciclo per tutti gli stati del sistema = 1:5                                                              
               # for all stochastic states (inflow, price, env)        
               @timeit to "Update input to decision problem : " begin
 
                 # PRE-PROCESSING OF DECISION PROBLEM
                 # ----------------------------------
-
-                # update optimisation problem                                                                                             # Updates the objective function etc (line 370)
-                SP = @timeit to "Update decision problem" update_state_dependent_input(
+                                                                          
+                # update optimisation problem                               # Per tutte le settimane, combinazioni di reservoir e stati del sistema aggiorno prezzi e inflow                                                           
+                SP = @timeit to "Update decision problem" update_state_dependent_input(       
                   t,
                   nfrom,
                   iState,
@@ -140,7 +140,7 @@ function SDP(
                 )
 
 
-                # check if future value table is convex or not
+                # check if future value table is convex or not     #Controlla se la funzione WV (derivata di alphavalue) è convessa. Se non lo è viene linearizzata con SOS2
                 @timeit to "Check convex: " notConvex =
                   isNotConvex(WVTable[t+1, iState, :, :])                                                                                 # Function present in "waterValueFunctions"
 
@@ -177,10 +177,10 @@ function SDP(
                   end
                 end #timer SOS2
 
-                @timeit to "Set env requirements: " begin                                                      # Impongo i vincoli ambientali
+                @timeit to "Set env requirements: " begin                              # Impongo i vincoli ambientali: state dependent constraint
                   # check environmental requirements and update problem
                   
-                  if envConst
+                  if envConst                                                          #Se ci sono i vincoli a seconda della settimana vengono imposti i limiti di discharge e volume
 
                     for envData in envDataList
                       if t < envData.lastAct && envData.firstAct > 0 && Bool(ScenarioLattice.states[t][iState, 3])      # Se 0<t<23 
@@ -214,9 +214,9 @@ function SDP(
                   end
                 end #timer env
 
-                if HY.Station_with_pump==1 && !add_dischargeLimitPump    # if is false, there are no restric.pumping due to state-constraints on max discharge
+                if HY.Station_with_pump==1 && !add_dischargeLimitPump                         # if is false, there are no restric.pumping due to state-constraints on max discharge
                   SP = DeactivationPump_SDP(SP,HY,ResSeg,LimitPump,nfrom,NStep)    
-                elseif HY.Station_with_pump==1 && add_dischargeLimitPump # true - add the constraint on pumping!
+                elseif HY.Station_with_pump==1 && add_dischargeLimitPump                      # true - add the constraint on pumping!
                   SP = add_disLimitPump(SP,NStep)
                 end
 
@@ -228,11 +228,11 @@ function SDP(
               # ----------------------
 
               nProblems += 1
-              @timeit to "optimising problems" optimize!(SP.model)                                                              # Start optimization of the problem
-              if termination_status(SP.model) == MOI.TIME_LIMIT                                                                 # Se il modello e' giunto a termine  
+              @timeit to "optimising problems" optimize!(SP.model)                            # Start optimization of the problem
+              if termination_status(SP.model) == MOI.TIME_LIMIT                               # Se il modello e' giunto a termine  
                 if MOI.get(optimizer, MOI.ResultCount()) > 0
                   println(
-                    "Time limit reached. Feasible solution found. t: ",                                                         # Se ha trovato una soluzione ottima
+                    "Time limit reached. Feasible solution found. t: ",                       # Se ha trovato una soluzione ottima
                     t,
                     ", nfrom:",
                     nfrom,
@@ -241,7 +241,7 @@ function SDP(
                   )
                 else
                   println(
-                    "Time limit reached. No feasible solution found. t: ",                                                      # Se non ha trovato una soluzione fattibile
+                    "Time limit reached. No feasible solution found. t: ",                    # Se non ha trovato una soluzione fattibile
                     t,
                     ", nfrom:",
                     nfrom,
@@ -251,24 +251,24 @@ function SDP(
                   optimal = false
                 end
               elseif termination_status(SP.model) != MOI.OPTIMAL
-                println("NOT OPTIMAL: ", termination_status(SP.model))                                                          # Se non ha trovato alcuna soluzione (alcun valore ottimale)
+                println("NOT OPTIMAL: ", termination_status(SP.model))                        # Se non ha trovato alcuna soluzione (alcun valore ottimale)
                 optimal = false
               end
 
               # SAVE RESULTS 
               # ------------
 
-              Alpha[iState] = JuMP.objective_value(SP.model)
+              Alpha[iState] = JuMP.objective_value(SP.model)             #Salvo i risultati per tutti gli stati (5): ottengo i valori di expected future profit
               
 
               if DebugSP
                 stageprobResult =
-                  check_results(1, t, nfrom, iState, stageprobResult, HY.NMod, SP)                                              # Function in "getResults"- save the results for Eprofit, obj , reservoir, spillage, production
+                  check_results(1, t, nfrom, iState, stageprobResult, HY.NMod, SP)     # Function in "getResults"- save the results for Eprofit, obj , reservoir, spillage, production
                 #TODO add envstate to results!
               end
 
-              # CLEAN-UP PROBLEM                                                                                                # Se non rimossi, puo' dare problemi nel aggiungerli - solo per renderlo piu' leggero ed evitare vincoli inutili
-              # ----------------                                                                                                # e per preparalo per la prossima iterazione
+              # CLEAN-UP PROBLEM                                                # Se non rimossi, puo' dare problemi nel aggiungerli - solo per renderlo piu' leggero ed evitare vincoli inutili
+              # ----------------                                                # e per preparalo per la prossima iterazione
 
               @timeit to "Clean-up env. state:" begin
                 # remove SOS2 constraints
@@ -315,24 +315,24 @@ function SDP(
             
             for fromState = 1:NStatesFrom #inflow,price, env state in t-1
               
-              AlphaTable[t, fromState, nfrom] =                                                                             # for week t, State of the system (1-5), for nfrom = combination of reservoir segments
+              AlphaTable[t, fromState, nfrom] =                            #[52, 5, 25]. Dopo aver calcolato Alpha calcolo AlphaTable=sommatoria probability(t)[from state, to state]+Alpha[to state]                                                 # for week t, State of the system (1-5), for nfrom = combination of reservoir segments
                 @timeit to "calculate expected future value:" sum([
                   ScenarioLattice.probability[t][fromState, toState] * Alpha[toState] for
                   toState = 1:NStates
                 ])
 
-              WVTable[t, fromState, nfrom, :] =
+              WVTable[t, fromState, nfrom, :] =                           #[week, state,res combination, upper or lower]
                 @timeit to "calculate water values" calculateWatervalues(                                                   # function in line 458
                   nfrom,
                   ResSeg,
-                  AlphaTable[t, fromState, :],                                                                              # Considering Alpha in week t, at state "fromState" and for all resSeg combinations
+                  AlphaTable[t, fromState, :],                           # Considering Alpha in week t, at state "fromState" and for all resSeg combinations
                 )
-            end #fromState                                                                                                  # Finishes when we have done it for all states in week t
+            end #fromState                                               # Finishes when we have done it for all states in week t
           
-          end #nfrom                                                                                                        # Finishes when done for all seg.combinations                        
+          end #nfrom                                                     # Finishes when done for all seg.combinations                        
 
           if solveMIP
-            println("Stage: ", t, " MIP solved: ", MIP_counter_t)                                                           # Quanti MIP ho risolto
+            println("Stage: ", t, " MIP solved: ", MIP_counter_t)        # Quanti MIP ho risolto
             #println("Alpha week 53: ", AlphaTable[end,1,1:5])
             #println("Alpha state $t", AlphaTable[t,1,1:5])
             #println("Difference:", AlphaTable[t+1,1,1:5]-AlphaTable[t,1,1:5])
@@ -346,15 +346,15 @@ function SDP(
       # ----------------------
 
       # Calculate difference in water values
-      @timeit to "calculate diff: " diff = check_diff(WVTable)                                                              # Function in line 444 - returns the difference
+      @timeit to "calculate diff: " diff = check_diff(WVTable)                         # Function in line 444 - returns the difference
 
       # check towards convergence criteria
       @timeit to "check conv. and update: " begin
-        if all(x -> x < conv, diff)                                                                                         # if diff <= conv (0.01) we have reached convergence
+        if all(x -> x < conv, diff)                                                    # if diff <= conv (0.01) we have reached convergence
           println("Converged iteration: ", n, ", max diff: ", max(diff...))
           n = MaxIt + 1
         else
-          println("Not converged, max diff: ", max(diff...))                                                                # in the case we haven't reached convergence, we update the WVTable and AlphaTable for next iteration
+          println("Not converged, max diff: ", max(diff...))                           # in the case we didn't reach convergence, we update the WVTable and AlphaTable for next iteration
 
           # update values for next iteration
           WVTable[end, :, :, :] = WVTable[1, :, :, :]
@@ -410,21 +410,21 @@ function update_state_dependent_input(
   ramping_constraints,
   #StepFlow,
  )
-  Price = ScenarioLattice.states[t][iState, 2] .* PriceScale[t,1:NStep]                                              # Per ogni stato (ce ne sono 5) della settimana corrente di quello scenario, moltiplico il prezzo per [0,75  1,0  1,25]
+  Price = ScenarioLattice.states[t][iState, 2] .* PriceScale[t,1:NStep]                          # Per ogni stato (ce ne sono 5) della settimana corrente di quello scenario, moltiplico il prezzo per [0,75  1,0  1,25]
   
-  for iMod = 1:HY.NMod                                                                                    # Itero 2 volte (n. di bacini)  
+  for iMod = 1:HY.NMod                                                                           # Itero 2 volte (n. di bacini)  
 
     # set RHS for reservoir balance first time-step in stage 
     JuMP.set_normalized_rhs(
-      SP.resbalInit[iMod],                                                                                # Per l'equazione "balance reservoir Initial state"
-      ResSeg[nfrom][iMod] +                                                                               # Volume reservoir iMod nella cobinazione nfrom + fatt.conv* inflow(allo stato iState,settimana t)* scala 
+      SP.resbalInit[iMod],                                                                       # Per l'equazione "balance reservoir Initial state"
+      ResSeg[nfrom][iMod] +                                                                      # Volume reservoir iMod nella cobinazione nfrom + fatt.conv* inflow(allo stato iState,settimana t)* scala 
       StepFranc[t,1] * ScenarioLattice.states[t][iState, 1] * HY.Scale[iMod],
     )
     #StepFranc[t,1]
 
-    for iStep = 1:NStep                                                                                   # per i 3 step
+    for iStep = 1:NStep                                                                          # per i 3 step
       # update power price to objective (per stage) 
-      set_objective_coefficient(SP.model, SP.prod[iMod, iStep], NHoursStep * Price[iStep])                # Coefficiente che pongo davanti al prezzo nella funzione obiettivo
+      set_objective_coefficient(SP.model, SP.prod[iMod, iStep], NHoursStep * Price[iStep])       # Coefficiente che pongo davanti al prezzo nella funzione obiettivo
       set_objective_coefficient(SP.model, SP.pump[iMod, iStep], -NHoursStep * Price[iStep])  
 
 
@@ -437,7 +437,7 @@ function update_state_dependent_input(
       end
 
       # MINIMUM ENVIRONMENTAL FLOW
-      for n=1:(HY.N_min_flows[iMod]-1)                                                                    # Cambio il valore di qMin: per determinate settimane ho valori diversi da 0
+      for n=1:(HY.N_min_flows[iMod]-1)                                                           # Cambio il valore di qMin: per determinate settimane ho valori diversi da 0
         if t>=HY.Activation_weeks[iMod,n] && t<HY.Activation_weeks[iMod,n+1]
             HY.qMin[iMod]= HY.Min_flows[iMod,n]
             JuMP.set_normalized_rhs(SP.q_min[iMod, iStep], HY.qMin[iMod])
@@ -493,7 +493,7 @@ end
 #---------------------------------------------------------------------------------------------
 
 function check_diff(Table)
-  if size(Table)[end] == 1                                                                                        # case of one reservoir - shouldn't pu 1 instead of last :?
+  if size(Table)[end] == 1                                                                                        # case of one reservoir - shouldn't put 1 instead of last :?
     diff_matrix = Table[1, :, :, :] .- Table[end, :, :, :]
     #diff = [sum(abs.(diff_matrix))]
     diff = abs.(diff_matrix)
@@ -513,15 +513,15 @@ function calculateWatervalues(nfrom, ResSeg, AlphaTable)      #nfrom = combo di 
   if HY.NMod == 2                                                                                                 # If we have 2 reservoirs
     if nfrom == 1                                                                                                 # Consider comb.n.1 = (0,00  0,00) - null volumes for both reservoirs
       Table[:] .= 0                                                                                               # WV in that point is nulla
-    elseif nfrom <= NSeg[1]    #NSeg[1]     - first column -low reservoir is empty                                                                      # If the upper reservoir gets filled but lower is empty
+    elseif nfrom <= NSeg[1]    #NSeg[1]     - first column -low reservoir is empty                                # If the upper reservoir gets filled but lower is empty
       Table[1] =                                                                                                  # WV of upper reservoir are updated
         (AlphaTable[nfrom] - AlphaTable[nfrom-1]) / (ResSeg[nfrom][1] - ResSeg[nfrom-1][1])
       Table[2] = 0                                                                                                # WV of lower reservoirs are null because empty
-    elseif ((nfrom - 1) / NSeg[1]) % 1 == 0              #when upper reservoir is empty                                                                   # In case when upper reservoi is empty and lower one is filling up
+    elseif ((nfrom - 1) / NSeg[1]) % 1 == 0              #when upper reservoir is empty                           # In case when upper reservoi is empty and lower one is filling up
       Table[1] = 0                                                                                                # WV for upper reservoir are null    
       Table[2] =
         (AlphaTable[nfrom] - AlphaTable[nfrom-NSeg[1]]) /  #NSeg[1]
-        (ResSeg[nfrom][2] - ResSeg[nfrom-NSeg[1]][2])        #NSeg[1]                                                        # WV for lower reservoir are updated
+        (ResSeg[nfrom][2] - ResSeg[nfrom-NSeg[1]][2])        #NSeg[1]                                             # WV for lower reservoir are updated
     else
       Table[1] =
         (AlphaTable[nfrom] - AlphaTable[nfrom-1]) / (ResSeg[nfrom][1] - ResSeg[nfrom-1][1])                       # Otherwise , if both Upperres and Lower res have volumes >=0
@@ -546,7 +546,7 @@ end
 
 function update_futureValue(WVTable, ResSeg, NEnvStates)
 
-  Table = zeros(NStates * NEnvStates, length(ResSeg))       #update AlphaTable                                                    # Creo una matrice nulla (5x25)
+  Table = zeros(NStates * NEnvStates, length(ResSeg))       #update AlphaTable                                  # Creo una matrice nulla (5x25)
 
   if size(WVTable)[end] == 2                                                                                    # In case we have 2 reservoirs
     for iSeg = 2:length(ResSeg)
@@ -597,7 +597,7 @@ function isNotConvex(WVTable)
             notConvex = true
             break
           end
-        end                                                                          # Lower Reservoir
+        end                                                                    # Lower Reservoir
         if WVTable[iSeg-NSeg[1], 2] != 0                                       # NSeg[1]
           if (any(WVTable[iSeg-NSeg[1], 2] .< WVTable[iSeg, 2]))               # NSeg[1]
             notConvex = true
