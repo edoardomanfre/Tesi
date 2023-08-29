@@ -33,8 +33,9 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   )
 
 
-  @variable(M,0 <= res[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res")
-  
+  @variable(M,0 <= res[iMod = 1, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") #Inserire volume minimo diverso da 0
+  @variable(M,0 <= res[iMod = 2, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") 
+
   @variable(M, 0 <= spi[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "spi")
   @variable(M, 0 <= prod[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "prod")
 

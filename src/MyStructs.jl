@@ -5,25 +5,25 @@
 
 # parameters 
 @with_kw struct InputParam{F<:Float64,I<:Int}
-  NSeg::Any                                     #Number of segments to divide the resevoir into to define states
-  NPrice::I                                     #Number of price scenarios
+  NSeg::Any                                     #Number of segments to divide the resevoir into to define states(5 5)
+  NPrice::I                                     #Number of price scenarios (1)
   NStage::I                                     #Number of stages (52)
-  NHoursStage::I                                #Number of hours in one stage (168)
+  NHoursStage::I                                #Number of hours in one stage (24x7=168)
   NHoursStep::I                                 #Number of hours in each time step within a stage (3)
-  Big::F                                        #A big number
-  AlphaMax::F                                   #Bounds for expected future value, initial value
-  PenSpi::F                                     #Small penalty for spillage
-  PenQ::F                                       #Large penalty for tanking
+  Big::F                                        #A big number (1E16)
+  AlphaMax::F                                   #Bounds for expected future value, initial value (1E16)
+  PenSpi::F                                     #Small penalty for spillage (0.001)
+  PenQ::F                                       #Large penalty for tanking (1E5)
   NStep::I                                      #Number of steps within each stage (8x7=56)
   MM3Week::F                                    #Conversion factor week: da m3/s a Mm3 in una settimana
   MM3Step::F                                    #Conversion factor time step: da m3/s a Mm3 in uno step (3 ore)
   StepFranc::Any                                #Time Step fraction of week: matrice distribuzione inflow sulla settimana
-  NStates::I                                    #Number of inflow scnearios
+  NStates::I                                    #Number of inflow scnearios (5)
   MaxIt::I                                      #Max number of iterations
   conv::F                                       #Convergence criterium
   NSamples::I                                   #Number of samples drawn when making scenario lattice (10000 scenari)
   NSimScen::I                                   #Number of scenarios simulated in sim (100 scenari)
-  LimitPump::I
+  LimitPump::I                                  #Volume limite del bacino per il quale la pompa lavora (52)
 end
 
 # solver parameters
@@ -47,34 +47,34 @@ end
 
 # case settings
 struct HydroData
-  NMod::Any #Numero bacini
-  NUp::Any  #Numero bacinni sopra
-  Eff::Any         # MW/m3/s
-  NDSeg::Any
-  DisMaxSeg::Any   # m3/s
-  MaxRes::Any      # Mm3/s
-  Scale::Any
-  ResInit0::Any    # Mm3
-  qMin::Any
+  NMod::Any               #Numero bacini
+  NUp::Any                #Numero bacini a monte
+  Eff::Any                #Efficienza turbina MW/m3/s
+  NDSeg::Any        
+  DisMaxSeg::Any          #m3/s
+  MaxRes::Any             #Mm3/s
+  Scale::Any              #1.000, 0.417
+  ResInit0::Any           #Mm3
+  qMin::Any               #Deflusso minimo vitale
   Station_with_pump::Any
   NDSegPump::Any
   DisMaxSegPump::Any
   EffPump::Any
   Pump_direction::Any
   N_min_flows::Any
-  Activation_weeks::Any # Riferiti a qmin
-  Min_flows::Any
+  Activation_weeks::Any   #Settimane a cui si riferiscono i vari q_min
+  Min_flows::Any          #q_min per le varie Activation weeks(0.0 0.5 0.2 0.0)
 end
 
 # run settings
 @with_kw mutable struct runModeParam{B<:Bool}
 
   # Solver settings
-  solveMIP::B = false    #If using SOS2
+  solveMIP::B = false     #If using SOS2
 
   # SDP settings
   solveSDP::B = true
-  DebugSP::B = false #Option to save results from each time decision problem is solved in SDP
+  DebugSP::B = false      #Option to save results from each time decision problem is solved in SDP
   useWaterValues::B = false # option to start SDP using exist
   #readSDPResults::B = false
 
@@ -93,10 +93,10 @@ end
   #newCaseRun::B = true
 
   #runMode self defined reading of input 
-  setInputParameters::B = true            #from .in file
+  setInputParameters::B = true              #from .in file
   #readInputParameters::B = false           #from previous result files
 
-  hydroSystemFromFile::B = true        #from input file
+  hydroSystemFromFile::B = true             #from input file
 
   #inflowFromFile::B = true                 #from input file
   #inflowFromDataStorage::B = false         #from previous result files
@@ -104,13 +104,13 @@ end
   #priceFromFile::B = true                  #from input file
   #priceFromDataStorage::B = false          #from previous result files
 
-  createMarkovModel::B = true              #from input file
+  createMarkovModel::B = true               #from input file
   #markovModelFromDataStorage::B = false    #from previous result files
 
   drawScenarios::B = true
   drawOutofSampleScen::B = false
-  useScenariosFromDataStorage::B = false   #from previous result files
-  useHistoricScen::B = false               #from input file
+  useScenariosFromDataStorage::B = false    #from previous result files
+  useHistoricScen::B = false                #from input file
 
   #inputFromDatastorage::B = false          #if reading from resultfile
 
@@ -125,14 +125,14 @@ end
 
 # Enivronmental constraint: reservoir dependent max. discharge constraint
 struct maxDishargeConstraint
-  envMod::Int                                                             #module constrain it imposed on
-  firstAct::Int                                                           #first week where constraint can be activated
-  lastAct::Int                                                            #last week where constraint can be activated
-  lastMaxDisch::Int                                                       #last week where max discharge can be activeted
-  lastNoDecrease::Int                                                     #first week where no res level decrease can be activated
-  actLevel::Float64                                                       #Inflow level that activates constraint
-  deactLevel::Float64                                                     #reservoir level that deactivated constraint
-  maxDischarge::Float64                                                   #max discharge limit
+envMod::Int                                 #module constrain it imposed on
+  firstAct::Int                             #first week where constraint can be activated
+  lastAct::Int                              #last week where constraint can be activated
+  lastMaxDisch::Int                         #last week where max discharge can be activeted
+  lastNoDecrease::Int                       #first week where no res level decrease can be activated
+  actLevel::Float64                         #Inflow level that activates constraint
+  deactLevel::Float64                       #reservoir level that deactivated constraint
+  maxDischarge::Float64                     #max discharge limit
 end
 
 # Enivronmental constraint: inflow dependent min. flow constraint

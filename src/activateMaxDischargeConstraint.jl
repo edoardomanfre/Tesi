@@ -16,37 +16,37 @@ function activate_EnvConstraint(                                                
   add_dischargeLimitPump,
 )
 
-  if t >= envData.lastAct && t <= envData.lastMaxDisch                                    #se siamo tra settimana 19 e 32                             # se t>= last activation week(23) e t<= last_active_wek_max_discharge(38)                                                               
-    SP = relax_noResDecrease(SP, envData.envMod, NStep)                                   # Volume[2,NStep_ultimo]>=0, può diminuire quanto vuole
+  if t >= envData.lastAct && t <= envData.lastMaxDisch                    #se siamo tra settimana 23 e 38: se t>= last activation week(23) e t<= last_active_wek_max_discharge(38)                                                               
+    SP = relax_noResDecrease(SP, envData.envMod, NStep)                   #Volume[2,NStep_ultimo]>=0, può diminuire quanto vuole
     
-    if ResSeg[nfrom][envData.envMod] >= envData.deactLevel                                # se in quelle settimane (19-32), il volume del bacino su cui è posto il vincolo >= livello di deactivation (146.8)
-      SP = add_minRes(SP, envData, NStep)                                                 # allora il deactLevel (146 Mmn3) diventa il volume minimo per tutta la settimana
-      add_dischargeLimitPump = false
+    if ResSeg[nfrom][envData.envMod] >= envData.deactLevel                #se in quelle settimane (23-38), il volume del bacino su cui è posto il vincolo >= livello di deactivation (87.44)
+      SP = add_minRes(SP, envData, NStep)                                 #allora il deactLevel (87.44 Mmn3) diventa il volume minimo per tutta la settimana
+      add_dischargeLimitPump = false                                      #non ho limiti sul pompaggio se non vado sotto il deactLevel
       #SP = relax_minRes_init(SP,envData)
       #SP = relax_dichargeLimit(SP,envData)
-    elseif (                                                                              #se volume del bacino Imod allo stato nfrom + (inflow allo stato iState della settimana t)*fattore_scala(bacino iMod) >= 146.8 Mm^3
+    elseif (                                                              #se volume del bacino Imod allo stato nfrom + (inflow allo stato iState della settimana t)*fattore_scala(bacino iMod) >= 87.44 Mm^3
       (ResSeg[nfrom][envData.envMod] + ScenarioLattice.states[t][iState, 1] * HY.Scale[envData.envMod]) >= envData.deactLevel
     )
-      SP = add_minRes_init(SP, envData, NStep)                                            # Se il bacino+incoming inflow >= deactLevel -> allora deactLevel diventa volume minimo                                       
-      add_dischargeLimitPump = false
+      SP = add_minRes_init(SP, envData, NStep)                            #se il volume del bacino+incoming inflow >= deactLevel -> allora deactLevel diventa volume minimo                                       
+      add_dischargeLimitPump = false                                      #non ho limiti sul pompaggio
       #SP = relax_dichargeLimit(SP,envData)
       #SP = relax_minRes(SP,envData)
     else                                                                                                                        
       SP = add_dichargeLimit(SP, envData, NStep)   
-      add_dischargeLimitPump = true                                 
+      add_dischargeLimitPump = true                                       #ho limiti sul pompaggio: non posso scendere sotto 52 Mm3                                 
       #SP = add_dischargeLimitPump(SP,NStep)
       #SP = relax_minRes_init(SP,envData)
       #SP = relax_minRes(SP,envData)
     end
   
-  elseif t >= envData.lastAct && t <= envData.lastNoDecrease                              # Se t>=19 e t<=35
+  elseif t >= envData.lastAct && t <= envData.lastNoDecrease                              # Se t>=23 e t<=38
     SP = add_noResDecrease(SP, envData, ResSeg[nfrom][envData.envMod], NStep)             # non posso diminuire il volume d'acqua                 
   end
 
   return SP, add_dischargeLimitPump
 end
 
-function activate_EnvConstraint_sim(                                                      # funzione applicata nel codice #simulazione" con 100 scenari scelti
+function activate_EnvConstraint_sim(                                                      #funzione applicata nel codice "simulazione" con 100 scenari scelti
   SP,
   t,
   iScen,
@@ -59,7 +59,7 @@ function activate_EnvConstraint_sim(                                            
   add_dischargeLimitPump,  #inizia con false
 )
 
-  if envData.firstAct != 0 && t >= envData.firstAct && t < envData.lastAct            # not present 0 first -23 last
+  if envData.firstAct != 0 && t >= envData.firstAct && t < envData.lastAct                #not present 0 first - 23 last
     
     if earlyActive_maxDischarge                                                       
       SP = add_dichargeLimit(SP, envData, NStep)

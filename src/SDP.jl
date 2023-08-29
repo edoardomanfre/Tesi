@@ -23,7 +23,7 @@ function SDP(
   HY,                     #Hydraulic data dei due power system
   scenarioLatticeData,    #Tutti i possibili scenari generati con valori di inflow e prezzi
   ResSeg,                 #5x5=25 possibili combinazioni di volumi
-  PriceScale,             #Matrice 52x7 o 52x56
+  PriceScale,             #Matrice 52x7 o 52x56: 7gg o 8x7 ore
   envDataList,            #Lista dei vincoli ambientali con relativi valori
   runMode,
   FinalResPath,
@@ -45,11 +45,11 @@ function SDP(
 
   # make arrays for results
   AlphaTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg))                     # Creo una matrice nulla 53x5(o10)x25
-  WVTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg), HY.NMod)               # Creo una matrice 53x5x25x2 (una per upper e l'altra per lower reservoir)
+  WVTable = zeros(NStage + 1, NStates * NEnvStates, length(ResSeg), HY.NMod)               # Creo una matrice 53x5(o10)x25x2 (una per upper e l'altra per lower reservoir)
 
   if warmstart != 0
-    println("Using previous watervalues as startpoint..")
-    if size(warmstart)[2] == size(WVTable)[2]                                              # Se ho gia' dei valori di WVT posso cominiciare gia' da quelli invece di fare un'altra matrice nulla
+    println("Using previous watervalues as startpoint..")                                  # Se ho gia' dei valori di WVT posso cominiciare gia' da quelli invece di fare un'altra matrice nulla
+    if size(warmstart)[2] == size(WVTable)[2]                                              
       WVTable = warmstart
       WVTable[end, :, :, :, :] = warmstart[1, :, :, :, :]
       AlphaTable[end, :, :, :] = update_futureValue(WVTable, ResSeg, NEnvStates)
@@ -177,15 +177,15 @@ function SDP(
                   end
                 end #timer SOS2
 
-                @timeit to "Set env requirements: " begin                              # Impongo i vincoli ambientali: state dependent constraint
+                @timeit to "Set env requirements: " begin                              #Impongo i vincoli ambientali: state dependent constraint
                   # check environmental requirements and update problem
                   
                   if envConst                                                          #Se ci sono i vincoli a seconda della settimana vengono imposti i limiti di discharge e volume
 
                     for envData in envDataList
-                      if t < envData.lastAct && envData.firstAct > 0 && Bool(ScenarioLattice.states[t][iState, 3])      # Se 0<t<23 
-                        SP = add_dichargeLimit(SP, envData, NStep)
-                        add_dischargeLimitPump = true
+                      if t < envData.lastAct && envData.firstAct > 0 && Bool(ScenarioLattice.states[t][iState, 3])      #Se 0<t<23 
+                        SP = add_dichargeLimit(SP, envData, NStep)                              
+                        add_dischargeLimitPump = true                                                                   #Impongo limite sul pompaggio (52)
                         #SP = add_dischargeLimitPump(SP,NStep)
                         SP = relax_minRes(SP, envData.envMod, NStep)
                         SP = relax_minRes_init(SP, envData.envMod, NStep)
@@ -195,7 +195,7 @@ function SDP(
                         #SP = relax_dischargeLimitPump(SP,NStep)
                         SP = relax_minRes(SP, envData.envMod, NStep)
                         SP = relax_minRes_init(SP, envData.envMod, NStep)
-                      elseif t >= envData.lastAct && t <= envData.lastNoDecrease                # If 23<t<38 , activates the Environemntal constraints
+                      elseif t >= envData.lastAct && t <= envData.lastNoDecrease       #If 23<t<38 , activates the Environmental constraints
                         SP, add_dischargeLimitPump = activate_EnvConstraint(
                           SP,
                           t,
@@ -270,7 +270,7 @@ function SDP(
               # CLEAN-UP PROBLEM                                                # Se non rimossi, puo' dare problemi nel aggiungerli - solo per renderlo piu' leggero ed evitare vincoli inutili
               # ----------------                                                # e per preparalo per la prossima iterazione
 
-              @timeit to "Clean-up env. state:" begin
+              @timeit to "Clean-up env. state:" begin                           #Rimuovo tutti i constraints attivati che poi verranno rimessi o no nella prossima iterazione
                 # remove SOS2 constraints
                 if solveMIP && ((notConvex && n > 1) || (notConvex && warmstart != 0)) #((notConvex && useDiag) || 
                   if HY.NMod==2
@@ -493,11 +493,11 @@ end
 #---------------------------------------------------------------------------------------------
 
 function check_diff(Table)
-  if size(Table)[end] == 1                                                                                        # case of one reservoir - shouldn't put 1 instead of last :?
+  if size(Table)[end] == 1                                                 # case of one reservoir - shouldn't put 1 instead of last :?
     diff_matrix = Table[1, :, :, :] .- Table[end, :, :, :]
     #diff = [sum(abs.(diff_matrix))]
     diff = abs.(diff_matrix)
-  elseif size(Table)[end] == 2                                                                                    # Case of 2 reservoirs - difference for upper and lower
+  elseif size(Table)[end] == 2                                             # Case of 2 reservoirs - difference for upper and lower
     diff_u = Table[1, :, :, 1] .- Table[end, :, :, 1]
     diff_l = Table[1, :, :, 2] .- Table[end, :, :, 2]
     #diff = [sum(abs.(diff_u)), sum(abs.(diff_l))]

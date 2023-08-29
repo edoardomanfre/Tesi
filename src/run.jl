@@ -74,7 +74,7 @@ to = TimerOutput()
   #inflow = set_inflow(runMode, InputFromFile, case)
   #price, PriceScale = set_price(runMode, InputFromFile, case)
   scenLData = set_stochastic_variables(runMode, case, InputParameters)
-  PriceScale = read_csv("price_variation_nonzero.csv",case.DataPath)                                       # price_variations_24h.csv
+  PriceScale = read_csv("price_ita.csv",case.DataPath)                                       # price_variations_24h.csv -> vanno i valori di scala
 
   if ScalePriceMeanYear
     println("Changing price series mean..")

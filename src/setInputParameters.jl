@@ -145,7 +145,7 @@ function read_parameters_from_config_file(file = "configParameters.in")
   paramDict[:MM3Step] = paramDict[:MM3Week] / paramDict[:NStep]
   #paramDict[:StepFlow] = paramDict[:NHoursStep] / paramDict[:NHoursStage]
 
-  StepFranc = read_csv("Inflow_56steps_new.csv",case.DataPath)
+  StepFranc = read_csv("inflow_ita.csv",case.DataPath)
 
   #integers =
    # [:NPrice :NStage :NSeg :NHoursStage :NHoursStep :NStep :NStates :MaxIt :NSamples :NSimScen :CPX_PARAM_SCRIND :CPX_PARAM_PREIND :CPX_PARAM_TILIM]
@@ -521,8 +521,8 @@ function set_stochastic_variables(
   try
     if runMode.createMarkovModel
       println("Creating Markov model.")
-      inflow = read_csv("inflow.csv", case.DataPath) #Mm3     # file degli inflow futuri
-      price = read_csv("price.csv", case.DataPath) #Eur/MWh     # file dei prezzi futuri
+      inflow = read_csv("inflow_ita.csv", case.DataPath) #Mm3     # file degli inflow futuri
+      price = read_csv("price_week.csv", case.DataPath) #Eur/MWh     # file dei prezzi futuri
       scenLData = samplingAlg(inflow, price, InputParameters)
     else
       println("Reading makov model from JLD file.")

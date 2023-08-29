@@ -31,7 +31,7 @@
     parallellSim = false
 
 # Environmental constraint settings
-    envConst = true
+    envConst = false
     #flowDependentqMin = false
     #if using makow model made without early activation to solve SDP algorithm with early activation
     extendScenarioLattice = false

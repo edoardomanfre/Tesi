@@ -41,7 +41,7 @@ function update_future_value_constraint_sim(SP, AlphaTable, NSeg, t, iState, env
 end
 
 
-function sim(                                                                                                   # Ora conosco per ogni settimana i valori di inflow e prezzo (calcolati con il modello di Markov) - risolvo il problema come "DETERMINISTICO"
+function sim(                                  # Ora conosco per ogni settimana i valori di inflow e prezzo (calcolati con il modello di Markov) - risolvo il problema come "DETERMINISTICO"
   InputParameters::InputParam,
   SolverParameters::SolverParam,
   ValueTableSDP::FutureValueSDP,
@@ -49,102 +49,102 @@ function sim(                                                                   
   runMode,
 )
 
-  @unpack ResSeg, WVTable, AlphaTable = ValueTableSDP
+  @unpack ResSeg, WVTable, AlphaTable = ValueTableSDP # Tiro fuori:unpack da SDP
   @unpack (scenarios, scenStates) = SimScen
   @unpack NStep, NStage, NSimScen, StepFranc, NHoursStep ,Big , LimitPump= InputParameters
   @unpack envConst, solveMIP, ramping_constraints = runMode
 
 
-  println("Simulating, ", NSimScen, " scenarios...")
-
-  Eprofit = zeros(NStage)
+  println("Simulating, ", NSimScen, " scenarios...")                           
+                                                                              
+  Eprofit = zeros(NStage)                                                      # Creo matrici e le inizializzo a zero
   
-  pumping_costs_timestep=zeros(HY.NMod,NSimScen,NStage,NStep)                                                 # Cost for pumping at each time step
-  weekly_pumping_costs=zeros(HY.NMod,NSimScen,NStage)                                                         # Cost of pumping each week
-  annual_cost_each_reservoir_pump =zeros(HY.NMod,NSimScen)
+  pumping_costs_timestep=zeros(HY.NMod,NSimScen,NStage,NStep)                  # Cost for pumping at each time step
+  weekly_pumping_costs=zeros(HY.NMod,NSimScen,NStage)                          # Cost of pumping each week
+  annual_cost_each_reservoir_pump =zeros(HY.NMod,NSimScen)                     
   annual_total_cost_pump =zeros(NSimScen)
-  turbine_profit_timestep = zeros(HY.NMod,NSimScen,NStage,NStep)                                                      # NET profit = turbine-pump
+  turbine_profit_timestep = zeros(HY.NMod,NSimScen,NStage,NStep)               
   weekly_turbine_profit = zeros(HY.NMod,NSimScen,NStage)
   annual_profit_each_reservoir_turbine = zeros(HY.NMod,NSimScen)
   annual_total_profit_turbine = zeros(NSimScen)
   
   Reservoir = zeros(HY.NMod, NSimScen, NStage, NStep)
-  Reservoir_round =zeros(HY.NMod,NSimScen,NStage,NStep)
+  Reservoir_round =zeros(HY.NMod,NSimScen,NStage,NStep)                        #Per fermare a due cifre significative
   Spillage = zeros(HY.NMod, NSimScen, NStage, NStep)
-  Production = zeros(HY.NMod, NSimScen, NStage, NStep)                                                        # Produzione LORDA (senza considerare costi di pompaggio)
+  Production = zeros(HY.NMod, NSimScen, NStage, NStep)                         #Produzione LORDA (senza considerare costi di pompaggio)
   Q_slack = zeros(HY.NMod, NSimScen, NStage, NStep)
   Min_slack =zeros(HY.NMod, NSimScen, NStage, NStep)
   Res_slack_pos =zeros(HY.NMod,NSimScen,NStage,NStep)
   Res_slack_neg = zeros(HY.NMod,NSimScen,NStage,NStep)
 
-  totDischarge = zeros(HY.NMod, NSimScen, NStage, NStep)                                                      # Total amount of water discharged by turbines
-  totPumped=zeros(NSimScen,NStage,NStep)                                                                      # Amount of water pumped from lower to upper
+  totDischarge = zeros(HY.NMod, NSimScen, NStage, NStep)                        #Total amount of water discharged by turbines
+  totPumped=zeros(NSimScen,NStage,NStep)                                        #Amount of water pumped from lower to upper
   
   resInit = zeros(HY.NMod, NSimScen, NStage)
   inflow = zeros(HY.NMod, NSimScen, NStage,NStep)
   price = zeros(HY.NMod, NSimScen, NStage, NStep)
   obj = zeros(NSimScen,NStage)
   alpha=zeros(NSimScen,NStage)
-  disSeg = []                                                                                                 # inizializzo un vettore nullo disSeg che poi andro' a riempire
+  disSeg = []                                                                   #Inizializzo un vettore nullo disSeg che poi andro' a riempire
                                                                                                     
 
-  disSegPump = zeros(NSimScen,NStage,NStep,HY.NDSegPump)                                                      # Ho una pompa sola
-  Pumping = zeros(HY.NMod,NSimScen,NStage,NStep)                                                              # Potenza richiesta per pompaggio
- # Net_production=zeros(HY.NMod,NSimScen,NStage,NStep)                                                         # Produzione netta
+  disSegPump = zeros(NSimScen,NStage,NStep,HY.NDSegPump)                        #Ho una pompa sola
+  Pumping = zeros(HY.NMod,NSimScen,NStage,NStep)                                #Potenza richiesta per pompaggio
+ # Net_production=zeros(HY.NMod,NSimScen,NStage,NStep)                          #Produzione netta
 
-  By_pass=zeros(HY.NMod,NSimScen,NStage,NStep)                                                                # By pass variable for minimum environmental flow
+  By_pass=zeros(HY.NMod,NSimScen,NStage,NStep)                                  #By pass variable for minimum environmental flow
 
   if HY.NMod == 1
-    gamma = zeros(NSimScen, NStage, NSeg[1])       #NSeg[1]                                                              # genero una matrice (100x52x5) per solo 1 reservoir dei valori di gamma per la cobinazione convessa
+    gamma = zeros(NSimScen, NStage, NSeg[1])       #NSeg[1]                     #Genero una matrice (100x52x5) per solo 1 reservoir dei valori di gamma per la cobinazione convessa
   elseif HY.NMod == 2
-    gamma = zeros(NSimScen, NStage, NSeg[1], NSeg[2])    #NSeg[1], NSeg[2]                                                           # matrice nulla 100x52x5x5 quando ho due reservoir
+    gamma = zeros(NSimScen, NStage, NSeg[1], NSeg[2])    #NSeg[1], NSeg[2]      #Matrice nulla 100x52x5x5 quando ho due reservoir
   end
   for iMod = 1:HY.NMod
-    append!(disSeg, [zeros(NSimScen, NStage, NStep, HY.NDSeg[iMod])])                                         # aggiungo al vettore disSeg , due matrici nulle - una per ogni reservoir, con i dati dei segment
+    append!(disSeg, [zeros(NSimScen, NStage, NStep, HY.NDSeg[iMod])])           #Aggiungo al vettore disSeg , due matrici nulle - una per ogni reservoir, con i dati dei segmenti
   end
 
   MIP_counter = 0
   nProblems = 0
-  for iScen = 1:NSimScen                                                                                      # Comincio a calcolare i valori per i 100 scenari , cominciando da iScen=1
+  for iScen = 1:NSimScen                                                        #Comincio a calcolare i valori per i 100 scenari, cominciando da iScen=1 (ordine cronologico)
     earlyActive_maxDischarge = false
     add_dischargeLimitPump = false
-    SP = BuildProblem(InputParameters, HY, SolverParameters)                                                  # Function to build model in "stageprob"
+    SP = BuildProblem(InputParameters, HY, SolverParameters)                    #Function to build model in "stageprob"
     print("Scen:", iScen)
-    for t = 1:NStage                                                                                          # Calcolo per ogni settimana  
+    for t = 1:NStage                                                            #Calcolo per ogni settimana (cronologico)  
      # println("t:", t)
-      Price = scenarios[iScen][t, 2] .* PriceScale[t,1:NStep]                                                   # Prezzo in quei N periodi (di TOTh) per lo scenario iScen, della settimana t
+      Price = scenarios[iScen][t, 2] .* PriceScale[t,1:NStep]                   #Prezzo in quei N periodi (di TOTh) per lo scenario iScen, della settimana t
                                                                                           
-      for iMod = 1:HY.NMod  
+      for iMod = 1:HY.NMod  # Per il numero di bacini(2)
 
         reservoir = 0
-        for iStep = 1:NStep                                                                                   # per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
+        for iStep = 1:NStep                                                     #Per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
           
           set_objective_coefficient(
-            SP.model,                                                                                         # SP e' il modello
-            SP.prod[iMod, iStep],                                                                             # davanti alla variabile prod[iMod, iStep]= produzione(MW) nel bacino iMod allo step iStep(1:3)
-            NHoursStep * Price[iStep],                                                                        # variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
+            SP.model,                                                           #SP e' il modello
+            SP.prod[iMod, iStep],                                               #Davanti alla variabile prod[iMod, iStep]= produzione(MW) nel bacino iMod allo step iStep(1:3)
+            NHoursStep * Price[iStep],                                          #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
           )
           set_objective_coefficient(
-            SP.model,                                                                                         # Stessa cosa per la pompa: aggiorno la vraiabile prezzo
+            SP.model,                                                           #Stessa cosa per la pompa: aggiorno la vraiabile prezzo
             SP.pump[iMod, iStep],                                                                             
-            -NHoursStep * Price[iStep],                                                                       # variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
+            -NHoursStep * Price[iStep],                                         #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
           )
 
           set_objective_coefficient(
-            SP.model,                                                                                         # Stessa cosa per la pompa: aggiorno la vraiabile prezzo
+            SP.model,                                                           #Stessa cosa per la pompa: aggiorno la vraiabile prezzo
             SP.spill[iMod, iStep],                                                                             
-            -Big,                                                                       # variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
+            -Big,                                                               #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
           )
         
-          if iStep > 1                                                                                        # Se siamo agli step 2 e 3
+          if iStep > 1                                                          #Se siamo agli step 2 e 3
             JuMP.set_normalized_rhs(
-              SP.resbalStep[iMod, iStep],                                                                     # Per reservoir balance constraint in "stageprob" linea 78
-              StepFranc[t, iStep] .* scenarios[iScen][t, 1] * HY.Scale[iMod],                                 # StepFranc*inflow(allo scenario iScen,settimana t) * scala(n.bacino)
+              SP.resbalStep[iMod, iStep],                                       #Per reservoir balance constraint in "stageprob" linea 78
+              StepFranc[t, iStep] .* scenarios[iScen][t, 1] * HY.Scale[iMod],   #StepFranc*inflow(allo scenario iScen,settimana t) * scala(n.bacino)
             )
           end
           #StepFranc[t,1:NStep]
 
-          for n=1:(HY.N_min_flows[iMod]-1)                                                                    # Cambio il valore di qMin: per determinate settimane ho valori diversi da 0
+          for n=1:(HY.N_min_flows[iMod]-1)                                      #Cambio il valore di qMin: per determinate settimane ho valori diversi da 0
             if t>=HY.Activation_weeks[iMod,n] && t<HY.Activation_weeks[iMod,n+1]
                 HY.qMin[iMod]= HY.Min_flows[iMod,n]
                 JuMP.set_normalized_rhs(SP.q_min[iMod, iStep], HY.qMin[iMod])
@@ -154,29 +154,29 @@ function sim(                                                                   
             end
           end
 
-          if iMod==1 && ramping_constraints  &&  iStep>1                                      #iMod==1 && 
+          if iMod==1 && ramping_constraints  &&  iStep>1    #Ramping constrains sono solo sul bacino superiore                                  #iMod==1 && 
             SP= intra_volume_changes(SP,iMod,iScen,t,iStep,HY,Reservoir,NStep)
           end
           
-        end                                                                                              # Finisco l'update per tutti gli STEP
+        end                                                                     #Finisco l'update per tutti gli STEP
 
-        if iScen == 1                                                                                         # Se siamo allo scenario 1
-          if t == 1                                                                                           # alla settimana t=1  
+        if iScen == 1                                                           #Se siamo allo scenario 1
+          if t == 1                                                             #Alla settimana t=1  
             JuMP.set_normalized_rhs(
               SP.resbalInit[iMod],
               HY.ResInit0[iMod] + StepFranc[t,1] .* scenarios[iScen][t, 1] * HY.Scale[iMod],                  # Aggiorno in "stageprob" contraint resbalInit (linea 66 - valore iniziale del Reservoir considerando Inflow e scala)
             ) #StepFranc
-          else                                                                                                # Per le settimane successive t>1
+          else                                                                  #Per le settimane successive t>1
             JuMP.set_normalized_rhs(
               SP.resbalInit[iMod],
               Reservoir[iMod, iScen, t-1, end] + StepFranc[t,1] .* scenarios[iScen][t, 1] * HY.Scale[iMod],
             ) 
           end
         else 
-          if t == 1                                                                                           # Per gli scenari successivi , se la settimana e' la prima e iStep=1
+          if t == 1                                                             #Per gli scenari successivi , se la settimana e' la prima e iStep=1
             JuMP.set_normalized_rhs(
               SP.resbalInit[iMod],
-              Reservoir[iMod, iScen-1, end, end] +                                                            # Valore del Reservoir allo scenario precedente, ultimo Step dell'ultima settimana
+              Reservoir[iMod, iScen-1, end, end] +                              #Valore del Reservoir allo scenario precedente, ultimo Step dell'ultima settimana
               StepFranc[t,1] .* scenarios[iScen][t, 1] * HY.Scale[iMod],
             ) 
           else
@@ -186,24 +186,24 @@ function sim(                                                                   
               StepFranc[t,1] .* scenarios[iScen][t, 1] * HY.Scale[iMod],
             ) 
           end 
-        end                                                                                                  # Per tutti gli scenari e tutte le settimane, aggiorno le variabili
+        end                                                                     #Per tutti gli scenari e tutte le settimane, aggiorno le variabili
         
-        if iMod==1 && ramping_constraints                                                      # iMod ==1 &&
+        if iMod==1 && ramping_constraints                                                     
           SP = initial_volume_changes(SP,iMod,iScen,t,HY,Reservoir)
         end
  
       end                                                                                                     # UPDATE FOR ALL RESERVOIRS
      
-      if envConst && t >= envDataList[1].firstAct && t < envDataList[1].lastAct                               # se envConst sono attivi e se sono in dati periodi dell'anno (vedi settimane di attivazione limiti)
-        EnvState = earlyActive_maxDischarge                                                                   # attivo "early_max_discharge"
+      if envConst && t >= envDataList[1].firstAct && t < envDataList[1].lastAct      #Se envConst sono attivi e se sono in dati periodi dell'anno (vedi settimane di attivazione limiti)
+        EnvState = earlyActive_maxDischarge                                          #Attivo "early_max_discharge"
       else
-        EnvState = false                                                                                      # altrimenti non attivo
+        EnvState = false                                                             #Altrimenti non attivo
       end
 
 
-      if envConst                                                                                             # Se vincoli attivi, attivo la funzione nel codice "activateMaxDiscahrgeConstraint"  
+      if envConst                                                                    #Se vincoli attivi, attivo la funzione nel codice "activateMaxDiscahrgeConstraint"  
         for envData in envDataList
-          SP, earlyActive_maxDischarge, add_dischargeLimitPump = activate_EnvConstraint_sim(                                          # Attivo la funzione "activate_EnvConstraint_sim" che si trova alla linea 48 in "activateMaxDischargeConstraint"
+          SP, earlyActive_maxDischarge, add_dischargeLimitPump = activate_EnvConstraint_sim(    #Attivo la funzione "activate_EnvConstraint_sim" che si trova alla linea 48 in "activateMaxDischargeConstraint"
             SP,
             t,
             iScen,
