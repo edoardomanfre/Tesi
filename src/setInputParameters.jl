@@ -117,7 +117,7 @@ function read_csv(file, path)
     return data
   catch e
     println("Can't read ", file)
-    throw(error())
+      throw(error())
   end
 end
 
@@ -145,7 +145,7 @@ function read_parameters_from_config_file(file = "configParameters.in")
   paramDict[:MM3Step] = paramDict[:MM3Week] / paramDict[:NStep]
   #paramDict[:StepFlow] = paramDict[:NHoursStep] / paramDict[:NHoursStage]
 
-  StepFranc = read_csv("inflow_ita.csv",case.DataPath)
+  StepFranc = read_csv("Inflow_ita_3h.csv",case.DataPath)
 
   #integers =
    # [:NPrice :NStage :NSeg :NHoursStage :NHoursStep :NStep :NStates :MaxIt :NSamples :NSimScen :CPX_PARAM_SCRIND :CPX_PARAM_PREIND :CPX_PARAM_TILIM]
