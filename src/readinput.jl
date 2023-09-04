@@ -166,7 +166,7 @@ function set_inflow(runMode::runModeParam, InputFromFile, case)
     if runMode.inflowFromFile && !runMode.inflowFromDataStorage
       println("Reading inflow from file.")
       inflow = Matrix{Float64}(
-        CSV.read(joinpath(case.DataPath, "inflow.csv"), DataFrame, header = false),
+        CSV.read(joinpath(case.DataPath, "inflow_ita.csv"), DataFrame, header = false),
       ) #mm3     
     end
 
@@ -188,7 +188,7 @@ function set_price(runMode::runModeParam, InputFromFile, case)
     if runMode.priceFromFile && !runMode.priceFromDataStorage
       println("Reading price from file.")
       price = Matrix{Float64}(
-        CSV.read(joinpath(case.DataPath, "price.csv"), DataFrame, header = false),
+        CSV.read(joinpath(case.DataPath, "price_week.csv"), DataFrame, header = false),
       ) #Eur/MWh   
       PriceScale =
         readPrice(joinpath(case.DataPath, string("prices_", case.PriceVar, ".dat")))
