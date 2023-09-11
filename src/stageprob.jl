@@ -33,8 +33,7 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   )
 
 
-  @variable(M,0 <= res[iMod = 1, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") #Inserire volume minimo diverso da 0
-  @variable(M,0 <= res[iMod = 2, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") 
+  @variable(M,0 <= res[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") #Inserire volume minimo diverso da 0
 
   @variable(M, 0 <= spi[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "spi")
   @variable(M, 0 <= prod[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "prod")
@@ -109,7 +108,14 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     M,
     minResPunish[iMod = 1:HY.NMod, iStep = 1:NStep],
     res[iMod, iStep] >= HY.MaxRes[iMod] * 0
-  )#0.1)
+  )
+
+  # Lower reservoir volume constraint (slack with punishment)
+  #@constraint(
+  #  M,
+  #  minResPunish[iMod = 1, iStep = 1:NStep],
+  #  res[iMod, iStep] >= 1.15
+  #0.1)
 
   #Hydropower generation
   @constraint(

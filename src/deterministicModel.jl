@@ -36,11 +36,8 @@ function BuildDeterministicProblem(HY::HydroData, Price, Inflow, resbalInitRHS)
     ),
   )
 
-  @variable(
-    M,
-    0 <= res[iMod = 1:HY.NMod, iStage = 1:NStage] <= HY.MaxRes[iMod],
-    base_name = "res"
-  )
+  @variable(M, 0 <= res[iMod = 1:HY.NMod, iStage = 1:NStage] <= HY.MaxRes[iMod], base_name = "res")
+
   @variable(M, 0 <= spi[iMod = 1:HY.NMod, iStage = 1:NStage] <= Big, base_name = "spi")
   @variable(M, 0 <= prod[iMod = 1:HY.NMod, iStage = 1:NStage] <= Big, base_name = "prod")
   @variable(M, 0 <= q_slack[iMod = 1:HY.NMod, iStage = 1:NStage], base_name = "q_slack")

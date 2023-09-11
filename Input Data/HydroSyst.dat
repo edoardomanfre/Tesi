@@ -2,20 +2,20 @@
 # No. seg.; PQpoint[MW,m3/s] 
 ------------
 2          
-3 40.67 58.00 43.52 65.00 46.61 75.00 
-3 33.00 45.00 37.00 55.0038.00 58.00
+3 23.22 9.22 29.07 11.77 32.39 14.02 
+4 19.85 11.51 25.34 14.7 30.18 17.50 36.21 21.00
 
 # Reservoirs
 # Storage capacity [Mm3]; Initial storage [Mm3]; Inflow ser. no.; Scaling; Connectivity discharge; min flow
 ------------
-12.2 5.6 1 0.027 0 0
-3.7 1.76 1 1.000 1 1
-
+12.2 5.6 1 1.000 0 0
+3.7 1.76 1 0.270 1 1
+SS
 # PUMP
 # Station where pump is installed; 
 # No. seg.; PQpoint[m3/s,MW] 
 1
-2 44 38 50 45
+2 7.33 36.15 8.50 40.00 
 
 #N.Min_Flows, Act_week_1, Act_week_2, Act_week_3, Act_week_4
 0
