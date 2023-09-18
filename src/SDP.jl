@@ -64,7 +64,7 @@ function SDP(
 
   if DebugSP
     # save results before convergence
-    stageprobResult = make_stageprobResult()
+    stageprobResult = make_stageprobResult() 
   end
 
   # print information about problem

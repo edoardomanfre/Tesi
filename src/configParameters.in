@@ -4,7 +4,7 @@
     NStage = 52
     NSeg = 5 5
     NPrice = 1          
-    LimitPump = 52   
+    LimitPump = 2   
 
 #Decision problem
     PenSpi = 0.001
