@@ -220,6 +220,7 @@ struct StageProblemTwoRes
   minReservoirEnd::Any
   minReservoir::Any
   noDecrease_week::Any
+  minResPunish::Any
 end
 #q_min::Any
 
@@ -326,3 +327,11 @@ struct Water_levels
   weekly_water_variations::Any
   frequency::Any
 end 
+
+struct Head
+  water_volumes_file::Any
+  water_levels_file::Any
+  NVolumes::Any
+  Water_levels_Simulation::Any
+  Head_Simulation::Any  
+end

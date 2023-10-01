@@ -136,6 +136,11 @@ function sim(                                  # Ora conosco per ogni settimana 
             -Big,                                                               #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
           )
         
+          JuMP.set_normalized_rhs(
+              SP.minResPunish[iMod, iStep],                                       
+              HY.MaxRes[iMod] * 0.2,   
+            )
+
           if iStep > 1                                                          #Se siamo agli step 2 e 3
             JuMP.set_normalized_rhs(
               SP.resbalStep[iMod, iStep],                                       #Per reservoir balance constraint in "stageprob" linea 78

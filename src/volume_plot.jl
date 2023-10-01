@@ -7,47 +7,75 @@ using DelimitedFiles
 
 function savePlots(InputParameters::InputParam)
 
-    scenarios = [1 100];
-    scenario_max_inflow = 1;
-    scenario_min_inflow = 100;
-    println("Plots for scenarios $scenario_max_inflow, and $scenario_min_inflow")
+    @unpack NSeg, NStage, NStates, MaxIt, conv, StepFranc, NHoursStep, NStep, LimitPump = InputParameters
 
-    NStep = InputParameters.NStep;
-    concatenation_waterLevel = zeros(HY.NMod,NSimScen,NStep*NStage);
+    scenarios = collect(1:100)
+    println("Plots for scenarios $scenarios")
 
+    NStep = InputParameters.NStep
+    concatenation_production_turbines = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_production_pump = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_inflows = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_reservoir = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_price = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_waterLevel_variations = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_waterLevel = zeros(HY.NMod, NSimScen, NStep * NStage)
+    concatenation_head = zeros(HY.NMod, NSimScen, NStep * NStage)
+    
     for iMod = 1:HY.NMod
         for iScen = 1:NSimScen
             for iStage = 1:NStage
-                concatenation_waterLevel[iMod,iScen,(NStep*(iStage-1))+1:1:(NStep*iStage)] = Results_Water_levels.Water_levels_Simulation[iMod,iScen,iStage,:]
+                start_idx = (NStep * (iStage - 1)) + 1
+                end_idx = NStep * iStage
+
+                concatenation_production_turbines[iMod, iScen, start_idx:end_idx] = ResultsSim.Production[iMod, iScen, iStage, :] * InputParameters.NHoursStep
+                concatenation_production_pump[iMod, iScen, start_idx:end_idx] = ResultsSim.Pumping[iMod, iScen, iStage, :] * InputParameters.NHoursStep
+                concatenation_inflows[iMod, iScen, start_idx:end_idx] = ResultsSim.inflow[iMod, iScen, iStage, :]
+                concatenation_reservoir[iMod, iScen, start_idx:end_idx] = ResultsSim.Reservoir[iMod, iScen, iStage, :]
+                concatenation_price[iMod, iScen, start_idx:end_idx] = ResultsSim.price[iMod, iScen, iStage, :]
+                concatenation_waterLevel_variations[iMod, iScen, start_idx:end_idx] = Results_Water_levels.water_level_variations[iMod, iScen, iStage, :]
+                concatenation_waterLevel[iMod, iScen, start_idx:end_idx] = Results_Water_levels.Water_levels_Simulation[iMod, iScen, iStage, :]
+                concatenation_head[iMod, iScen, start_idx:end_idx] = Results_Head.Water_Head_Simulation[iMod, iScen, iStage, :]
             end
         end
     end
 
-    for i in scenarios 
-        Reservoir_level = DataFrame();
+    folder = "Scenarios"
+    mkdir(folder)
+    cd(folder)
 
-        for iStep = NStage*NStep
+    for i in scenarios 
+        Prod_Turbines = DataFrame()
+        Prod_Pump = DataFrame()
+        Prices = DataFrame()
+        Inflow = DataFrame()
+        Reservoir_volume = DataFrame()
+        Reservoir_level = DataFrame()
+        Variations_water = DataFrame()
+        Head = DataFrame()
+
+        for iStep = NStage * NStep
             for iMod = 1:HY.NMod
-                Reservoir_level[!,"Module_$iMod"]  = concatenation_waterLevel[iMod,i,:]
+                Prod_Turbines[!, "Reservoir_$iMod"] = concatenation_production_turbines[iMod, i, :]
+                Prod_Pump[!, "Reservoir_$iMod"] = concatenation_production_pump[iMod, i, :]
+                Prices[!, "Reservoir_$iMod"] = concatenation_price[iMod, i, :]
+                Inflow[!, "Reservoir_$iMod"] = concatenation_inflows[iMod, i, :]
+                Reservoir_volume[!, "Reservoir_$iMod"] = concatenation_reservoir[iMod, i, :]
+                Reservoir_level[!, "Reservoir_$iMod"] = concatenation_waterLevel[iMod, i, :]
+                Variations_water[!, "Reservoir_$iMod"] = concatenation_waterLevel_variations[iMod, i, :]
+                Head[!, "Reservoir_$iMod"] = concatenation_head[iMod, i, :]
             end
         end
 
-        XLSX.writetable("Scenario $i.xlsx",overwrite=true,
-        Reservoir_level = (collect(DataFrames.eachcol(Reservoir_level)),DataFrames.names(Reservoir_level))
-
-    )
-
+        XLSX.writetable("Scenario $i.xlsx", overwrite = true,
+            Prod_Turbines_MWh = (collect(DataFrames.eachcol(Prod_Turbines)), DataFrames.names(Prod_Turbines)),
+            Prod_Pump_MWh = (collect(DataFrames.eachcol(Prod_Pump)), DataFrames.names(Prod_Pump)),
+            Prices_€ = (collect(DataFrames.eachcol(Prices)), DataFrames.names(Prices)),
+            Reservoir_volume = (collect(DataFrames.eachcol(Reservoir_volume)), DataFrames.names(Reservoir_volume)),
+            Reservoir_level = (collect(DataFrames.eachcol(Reservoir_level)), DataFrames.names(Reservoir_level)),
+            Variations_water = (collect(DataFrames.eachcol(Variations_water)), DataFrames.names(Variations_water)),
+            Inflow = (collect(DataFrames.eachcol(Inflow)), DataFrames.names(Inflow)),
+            Head = (collect(DataFrames.eachcol(Head)), DataFrames.names(Head))
+        )
+    end
 end
-
-    x=1:1:Nstep*NStage;
-
-    # Water level
-    w = plot(x,concatenation_waterLevel[1,scenario_max_inflow,:],size(1200,700),xlabel="N steps",ylabel="Reservoir_level [Mm3]", title ="Volume level upper reservoir")
-    plot!(w,x,concatenation_waterLevel[2,scenario_max_inflow,:], label = "Lower Reservoir")
-
-    savefig(w,"WaterLevel_$scenario_min_inflow.png")  
-    
-    return("Saved_plots")
-
-end
-

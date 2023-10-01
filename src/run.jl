@@ -32,7 +32,8 @@ include("ProductionFactors.jl")
 include("WaterLevels.jl")
 include("ExcelSavings.jl")
 include("volume_plot.jl")
-include("Plots.jl")
+include("head_function.jl")
+#include("Plots.jl")
 #include("ErrorEvaluation.jl")
 
 #path to input files and to location to save results
@@ -166,11 +167,18 @@ else
   println("Solved without end-simulation.")
 end
 
-# TIMW FOR WEATER LEVELS EVALUATION
+# TIME FOR WEATER LEVELS EVALUATION
 
 if runMode.water_levels
     Results_Water_levels = water_levels_evaluation(case,InputParameters)
     save(joinpath(FinalResPath,"Water_levels.jld"), "WaterLevelsAnalysis", Results_Water_levels)
+end
+
+# TIME FOR HEAD EVALUATION
+
+if runMode.head_variation
+    Results_Head = head_evaluation(case,InputParameters)  
+    save(joinpath(FinalResPath,"Head.jld"), "HeadAnalysis", Results_Head)
 end
 
 #TIME PRODUCTION FACTOR AND TIME EVALUATION
@@ -199,6 +207,8 @@ if runMode.save_excel
   Save_data= data_saving(runMode,SimScen, InputParameters)
 
 end
+
+savePlots(InputParameters)
 
 print(to)
 

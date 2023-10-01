@@ -33,7 +33,7 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   )
 
 
-  @variable(M,0 <= res[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.MaxRes[iMod],base_name = "res") #Inserire volume minimo diverso da 0
+  @variable(M,0 <= res[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.MaxRes[iMod], base_name = "res") #Inserire volume minimo diverso da 0
 
   @variable(M, 0 <= spi[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "spi")
   @variable(M, 0 <= prod[iMod = 1:HY.NMod, iStep = 1:NStep] <= Big, base_name = "prod")
@@ -118,13 +118,20 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   #0.1)
 
   #Hydropower generation
+#  @constraint(
+#    M,
+#    prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
+#    prod[iMod, iStep] ==
+#    sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod]) #Da vedere perche NDSeg non è sempre uguale e io devo cambiare solo il primo. Quindi il for va fatto dal secondo iSeg all'ultimo, no per il primo che deve essere aggiornato
+#  )
+
   @constraint(
     M,
     prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
     prod[iMod, iStep] ==
-    sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod])
+    sum(S1 * disSeg[iMod, 1, iStep] + HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 2:HY.NDSeg[iMod]) 
   )
-
+  
   #=
 @constraint(
     M,
@@ -267,6 +274,7 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     minReservoirEnd,
     minReservoir,
     noDecrease_week,
+    minResPunish,
   )
 end
     #q_min,

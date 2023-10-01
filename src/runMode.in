@@ -21,8 +21,8 @@
     #If using SOS2
 
 # SDP settings
-    solveSDP = true
-    useWaterValues = false
+    solveSDP = false
+    useWaterValues = true
     #Option to save results from each time decision problem is solved in SDP
     DebugSP = false
 
@@ -40,6 +40,7 @@
 # Additional functionalities
     production_factors= true
     water_levels = true
+    head_variation = true
     general_plots= true
     save_excel = true
     error_evaluation = false
