@@ -11,8 +11,8 @@ function water_levels_evaluation(case::caseData, InputParameters::InputParam) #R
     items = split(line, " ")
     NMod = parse(Int, items[1]) #set number of modules
     println("NMod = ", NMod)
-    water_volumes_file=zeros(Float64,HY.NMod,10);
-    water_levels_file=zeros(Float64,HY.NMod,10);
+    water_volumes_file=zeros(Float64,HY.NMod,21);
+    water_levels_file=zeros(Float64,HY.NMod,21);
     NVolumes=zeros(NMod);
     
     for iMod=1:NMod

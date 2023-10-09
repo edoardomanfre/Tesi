@@ -156,7 +156,7 @@ if runMode.simulate
     if runMode.parallellSim
       ResultsSim = paraSim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
     else
-      ResultsSim = sim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
+       ResultsSim = sim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
     end
   end #timer "SDP simulation"  
 
@@ -172,13 +172,6 @@ end
 if runMode.water_levels
     Results_Water_levels = water_levels_evaluation(case,InputParameters)
     save(joinpath(FinalResPath,"Water_levels.jld"), "WaterLevelsAnalysis", Results_Water_levels)
-end
-
-# TIME FOR HEAD EVALUATION
-
-if runMode.head_variation
-    Results_Head = head_evaluation(case,InputParameters)  
-    save(joinpath(FinalResPath,"Head.jld"), "HeadAnalysis", Results_Head)
 end
 
 #TIME PRODUCTION FACTOR AND TIME EVALUATION
@@ -209,6 +202,8 @@ if runMode.save_excel
 end
 
 savePlots(InputParameters)
+
+#Results_Head = head_evaluation(case, Reservoir,HY,iScen,t,NStep)
 
 print(to)
 

@@ -1,6 +1,14 @@
 # Function used to calculate the head
 
-function head_evaluation(case::caseData, InputParameters::InputParam)
+function head_evaluation(
+    case::caseData, 
+    Reservoir,
+    HY::HydroData,
+    iScen,
+    t,
+    NStep
+    )
+
     path=case.DataPath
     cd(path)
     f=open("Water_volumes_levels.dat")
@@ -10,16 +18,16 @@ function head_evaluation(case::caseData, InputParameters::InputParam)
     items = split(line, " ")
     NMod = parse(Int, items[1]) #set number of modules
     println("NMod = ", NMod)
-    water_volumes_file=zeros(Float64,HY.NMod,10);
-    water_levels_file=zeros(Float64,HY.NMod,10);
+    water_volumes_file=zeros(Float64,HY.NMod,21);
+    water_levels_file=zeros(Float64,HY.NMod,21);
     NVolumes=zeros(NMod);
   
     for iMod=1:NMod
         line = readline(f)
         items = split(line, " ")
-        NVolumes[iMod] = parse(Float64, items[1])
-        for n=1:NVolumes[iMod]                                      # n = 1:5
-        water_volumes_file[iMod,n]=parse(Float64,items[1+n])
+        NVolumes[iMod] = parse(Int, items[1])
+        for n=1:21 #NVolumes[iMod]                                   
+        water_volumes_file[iMod,n]=parse(Float64,items[1+n])    
         end
     end
     water_volumes_file;
@@ -31,100 +39,186 @@ function head_evaluation(case::caseData, InputParameters::InputParam)
     for iMod=1:NMod
         line = readline(f)
         items = split(line, " ")
-        for n=1:NVolumes[iMod]                                      # n = 1:5
-        water_levels_file[iMod,n]=parse(Float64,items[n])
+        for n=1:21 #NVolumes[iMod]                                  
+        water_levels_file[iMod,n]=parse(Float64,items[n])            
         end
     end
     water_levels_file;
 
     #EVALUATE THE WATER LEVELS, GIVEN THE WATER VOLUMES IN THE RESERVOIR
-    Water_levels_Simulation=zeros(HY.NMod,NSimScen,NStage,InputParameters.NStep);
+    Water_levels_Simulation=zeros(HY.NMod);
     Initial_water_levels=zeros(HY.NMod)
-    Head_Simulation = zeros(HY.NMod)
+    Head_Simulation_upper = 0
+    Head_Simulation_lower = 0
+    Max_Head_upper = 0
+    Max_Head_lower = 0
 
     # CALCULATES THE WATER LEVELS (m a.s.l) AND THE HEAD FROM THE VOLUME RESULTS
+    
     for iMod=1:HY.NMod
-        for iScen=1:NSimScen
-            for iStage=1:NStage
-                for iStep=1:InputParameters.NStep
 
-                    for n=1:NVolumes[iMod]-1                    #n=1:4 in questo ciclo for non considera i punti ma i segmenti
-                        
-                        if ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep] == water_volumes_file[iMod,n]
-                            Water_levels_Simulation[iMod,iScen,iStage,iStep] = water_levels_file[iMod,n]
-                            Head_Simulation[iMod,n] = Water_levels_Simulation[1,iScen,iStage,iStep] - Water_levels_Simulation[2,iScen,iStage,iStep]
-                        elseif ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep]> water_volumes_file[iMod,n] && ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep]< water_volumes_file[iMod,n+1]
-                            Water_levels_Simulation[iMod,iScen,iStage,iStep] = (water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
-                            Head_Simulation[iMod,n] = Water_levels_Simulation[1,iScen,iStage,iStep] - Water_levels_Simulation[2,iScen,iStage,iStep]
-                        end
-
-                        if HY.ResInit0[iMod] > water_volumes_file[iMod,n] && HY.ResInit0[iMod]< water_volumes_file[iMod,n+1]
-                            Initial_water_levels[iMod] =(water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(HY.ResInit0[iMod]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
-                            Head_simulation[iMod,n] = Initial_water_levels[1] - Initial_water_levels[2]
-                        end
-
-                        if ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep] == HY.MaxRes[1] && HY.MaxRes[2] * 0.2
-                            Water_level_Max[1,iScen,iStage,iStep] = # Devo capire come associare i volumi massimi e minimi con i livelli
-                            Water_level_Min[2,iScen,iStage,iStep] = # Da capire
-                            Max_Head[iMod,n] = Water_level_Max[1,iScen,iStage,iStep] - Water_level_Min[2,iScen,iStage,iStep] 
+        for n=1:20 #NVolumes[iMod]-1
+            
+            if iScen == 1
+                if t == 1
+                    Reservoir[iMod,iScen,t,NStep] == HY.ResInit0[iMod] # Controllo su ResInit0 = water volume file
+                    if HY.ResInit0[iMod] == water_volumes_file[iMod,n] 
+                        Initial_water_levels[iMod] = water_levels_file[iMod,n] 
+                        Head_Simulation_upper = Initial_water_levels[1] - Initial_water_levels[2]
+                        Head_Simulation_lower = Initial_water_levels[2] - 460
+                    elseif HY.ResInit0[iMod] > water_volumes_file[iMod,n] && HY.ResInit0[iMod]< water_volumes_file[iMod,n+1]
+                        Initial_water_levels[iMod] =(water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(HY.ResInit0[iMod]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
+                        Head_Simulation_upper = Initial_water_levels[1] - Initial_water_levels[2]
+                        Head_Simulation_lower = Initial_water_levels[2] - 460
+                    elseif HY.ResInit0[1] == HY.MaxRes[1] && HY.ResInit0[2] == HY.MaxRes[2] * 0.2
+                        Water_level_Max_upper[1,iScen,t,NStep] = 1750
+                        Water_level_Max_lower[2,iScen,t,NStep] = 900
+                        Water_level_Min_lower[2,iScen,t,NStep] = 878.125
+                        Max_Head_upper = Water_level_Max[1,iScen,t,NStep] - Water_level_Min[2,iScen,t,NStep] 
+                        Max_Head_lower = Water_level_Max_lower[2,iScen,t,NStep] - 460
                     end
-                    
-                    if ResultsSim.Reservoir_round[1,iScen,iStage,iStep] == water_volumes_file[1,21]            #water_volumes_file[iMod,5] 
-                        Water_levels_Simulation[1,iScen,iStage,iStep] = water_levels_file[1,21]                #water_levels_file[iMod,5]
+                else        
+                    if Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[iMod,n]
+                        Water_levels_Simulation[iMod,iScen,t-1,NStep] = water_levels_file[iMod,n] 
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                    elseif Reservoir[iMod,iScen,t-1,NStep]> water_volumes_file[iMod,n] && Reservoir[iMod,iScen,t-1,NStep]< water_volumes_file[iMod,n+1]
+                        Water_levels_Simulation[iMod,iScen,t-1,NStep] = (water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(Reservoir[iMod,iScen,t-1,NStep]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                    elseif Reservoir[1,iScen,t-1,NStep] == HY.MaxRes[1] && Reservoir[2,iScen,t-1,NStep] == HY.MaxRes[2] * 0.2
+                        Water_level_Max_upper[1,iScen,t-1,NStep] = 1750
+                        Water_level_Max_lower[2,iScen,t-1,NStep] = 900
+                        Water_level_Min_lower[2,iScen,t-1,NStep] = 878.125
+                        Max_Head_upper = Water_level_Max[1,iScen,t-1,NStep] - Water_level_Min[2,iScen,t-1,NStep] 
+                        Max_Head_lower = Water_level_Max_lower[2,iScen,t-1,NStep] - 460
                     end
-
-                    if ResultsSim.Reservoir_round[2,iScen,iStage,iStep] == water_volumes_file[2,13]            #water_volumes_file[iMod,5] 
-                        Water_levels_Simulation[2,iScen,iStage,iStep] = water_levels_file[2,13]                #water_levels_file[iMod,5]
-                    end
-                    Head_Simulation[iMod,n] = Water_levels_Simulation[1,iScen,iStage,iStep] - Water_levels_Simulation[2,iScen,iStage,iStep]                  
                 end
+            else
+                if t == 1
+                    if Reservoir[iMod,iScen-1,end,NStep] == water_volumes_file[iMod,n]
+                        Water_levels_Simulation[iMod,iScen-1,end,NStep] = water_levels_file[iMod,n] 
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen-1,end,NStep] - Water_levels_Simulation[2,iScen-1,end,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen-1,end,NStep] - 460
+                    elseif Reservoir[iMod,iScen-1,end,NStep]> water_volumes_file[iMod,n] && Reservoir[iMod,iScen-1,end,NStep]< water_volumes_file[iMod,n+1]
+                        Water_levels_Simulation[iMod,iScen-1,end,NStep] = (water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(Reservoir[iMod,iScen-1,end,NStep]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen-1,end,NStep] - Water_levels_Simulation[2,iScen-1,end,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen-1,end,NStep] - 460
+                    elseif Reservoir[1,iScen-1,end,NStep] == HY.MaxRes[1] && Reservoir[2,iScen-1,end,NStep] == HY.MaxRes[2] * 0.2
+                        Water_level_Max_upper[1,iScen-1,end,NStep] = 1750
+                        Water_level_Max_lower[2,iScen-1,end,NStep] = 900
+                        Water_level_Min_lower[2,iScen-1,end,NStep] = 878.125
+                        Max_Head_upper = Water_level_Max[1,iScen-1,end,NStep] - Water_level_Min[2,iScen-1,end,NStep] 
+                        Max_Head_lower = Water_level_Max_lower[2,iScen-1,end,NStep] - 460
+                    end
+                else
+                    if Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[iMod,n]
+                        Water_levels_Simulation[iMod,iScen,t-1,NStep] = water_levels_file[iMod,n] 
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                    elseif Reservoir[iMod,iScen,t-1,NStep]> water_volumes_file[iMod,n] && Reservoir[iMod,iScen,t-1,NStep]< water_volumes_file[iMod,n+1]
+                        Water_levels_Simulation[iMod,iScen,t-1,NStep] = (water_levels_file[iMod,n+1]-water_levels_file[iMod,n])/(water_volumes_file[iMod,n+1]-water_volumes_file[iMod,n])*(Reservoir[iMod,iScen,t-1,NStep]-water_volumes_file[iMod,n])+water_levels_file[iMod,n]
+                        Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                        Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                    elseif Reservoir[1,iScen,t-1,NStep] == HY.MaxRes[1] && Reservoir[2,iScen,t-1,NStep] == HY.MaxRes[2] * 0.2
+                        Water_level_Max_upper[1,iScen,t-1,NStep] = 1750
+                        Water_level_Max_lower[2,iScen,t-1,NStep] = 900
+                        Water_level_Min_lower[2,iScen,t-1,NStep] = 878.125
+                        Max_Head_upper = Water_level_Max[1,iScen,t-1,NStep] - Water_level_Min[2,iScen,t-1,NStep] 
+                        Max_Head_lower = Water_level_Max_lower[2,iScen,t-1,NStep] - 460
+                    end
+                end
+            end
+    
+        end
+    
+    
+        if iScen == 1
+            if t == 1
+                Reservoir[1,iScen,t,NStep] == HY.ResInit0[iMod]
+                if HY.ResInit0[iMod] == water_volumes_file[1,21]           
+                    Water_levels_Simulation[1,iScen,t,NStep] = water_levels_file[1,21]
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t,NStep] - Water_levels_Simulation[2,iScen,t,NStep] 
+                elseif HY.ResInit0[iMod] == water_volumes_file[2,21] 
+                    Water_levels_Simulation[2,iScen,t,NStep] = water_levels_file[2,21]
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t,NStep] - 460 
+                elseif HY.ResInit0[iMod] == water_volumes_file[1,21] && HY.ResInit0[iMod] == water_volumes_file[2,21]
+                    Water_levels_Simulation[1,iScen,t,NStep] = water_levels_file[1,21]
+                    Water_levels_Simulation[2,iScen,t,NStep] = water_levels_file[2,21]
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t,NStep] - Water_levels_Simulation[2,iScen,t,NStep] 
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t,NStep] - 460
+                end     
+            else
+                if Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[1,21]
+                    Water_levels_Simulation[iMod,iScen,t-1,NStep] = water_levels_file[1,21] 
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                elseif Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[2,21] 
+                    Water_levels_Simulation[2,iScen,t-1,NStep] = water_levels_file[2,21]
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460 
+                elseif HY.ResInit0[iMod] == water_volumes_file[1,21] && HY.ResInit0[iMod] == water_volumes_file[2,21]
+                    Water_levels_Simulation[1,iScen,t-1,NStep] = water_levels_file[1,21]
+                    Water_levels_Simulation[2,iScen,t-1,NStep] = water_levels_file[2,21]
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep] 
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                end  
+            end
+        else
+            if t == 1
+                if Reservoir[iMod,iScen-1,end,NStep] == water_volumes_file[1,21]
+                    Water_levels_Simulation[iMod,iScen-1,end,NStep] = water_levels_file[1,21] 
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen-1,end,NStep] - Water_levels_Simulation[2,iScen-1,end,NStep]
+                elseif Reservoir[iMod,iScen-1,end,NStep] == water_volumes_file[2,21] 
+                    Water_levels_Simulation[2,iScen-1,end,NStep] = water_levels_file[2,21]
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen-1,end,NStep] - 460 
+                elseif HY.ResInit0[iMod] == water_volumes_file[1,21] && HY.ResInit0[iMod] == water_volumes_file[2,21]
+                    Water_levels_Simulation[1,iScen-1,end,NStep] = water_levels_file[1,21]
+                    Water_levels_Simulation[2,iScen-1,end,NStep] = water_levels_file[2,21]
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen-1,end,NStep] - Water_levels_Simulation[2,iScen-1,end,NStep] 
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen-1,end,NStep] - 460
+                end    
+            else
+                if Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[1,21]
+                    Water_levels_Simulation[iMod,iScen,t-1,NStep] = water_levels_file[1,21] 
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep]
+                elseif Reservoir[iMod,iScen,t-1,NStep] == water_volumes_file[2,21] 
+                    Water_levels_Simulation[2,iScen,t-1,NStep] = water_levels_file[2,21]
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460 
+                elseif HY.ResInit0[iMod] == water_volumes_file[1,21] && HY.ResInit0[iMod] == water_volumes_file[2,21]
+                    Water_levels_Simulation[1,iScen,t-1,NStep] = water_levels_file[1,21]
+                    Water_levels_Simulation[2,iScen,t-1,NStep] = water_levels_file[2,21]
+                    Head_Simulation_upper = Water_levels_Simulation[1,iScen,t-1,NStep] - Water_levels_Simulation[2,iScen,t-1,NStep] 
+                    Head_Simulation_lower = Water_levels_Simulation[2,iScen,t-1,NStep] - 460
+                end  
             end
         end
     end
 
-    return Head(water_volumes_file,water_levels_file,NVolumes,Water_levels_Simulation,Head_Simulation) # Max_Head è compreso nel return? Da capire se anche Initial_water_levels è compreso
+    return Head_data(water_volumes_file,water_levels_file,NVolumes,Water_levels_Simulation,Head_Simulation_upper,Head_Simulation_lower,Max_Head_upper,Max_Head_lower)
 
 end
 
-# In questo ciclo si calcola i livelli d'acqua rispetto al livello del mare, dunque per trovare l'head devo andare per il bacino sopra a fare la differenza tra le quote. Per il bacino sotto devo fare la differenza con l'altezza della penstock
 
-function efficiency_evaluation(HY::HydroData, Head)
-    for iMod = 1:NMod
-        for iSeg = 1:NDSeg[iMod]
-            if (iSeg == 1) && Head_simulation[1,n] - Head_simulation[2,n] == Max_Head[iMod,n] # Non so se sia giusto scrivere così
-                S1 = HY.Eff[iMod,1]
-                eta = S1 / (Max_Head[iMod,n] * 9810)
-            elseif (iSeg == 1)
-                S1 = eta * 9810 * Head_simulation[iMod,n] # Il codice capisce che eta è la variabile che ho dichiarato sopra?
-            end
+function efficiency_evaluation(HY::HydroData, Head::Head_data)
+
+    @unpack (Head_Simulation_upper, Head_Simulation_lower, Max_Head_upper, Max_Head_lower) = Head
+#Devo mettere su Head_Simulation_upper iMod = 1 a Head_simulation_lower iMod = 2?
+    S1 = 0
+    for iMod = 1:HY.NMod
+        if Head_Simulation_upper == Max_Head_upper 
+            S1 = HY.Eff[iMod,1] 
+        elseif Head_Simulation_upper != Max_Head_upper
+            eta = HY.Eff[iMod,1] / (Max_Head_upper * 9810)
+            S1 = eta * 9810 * Head_Simulation_upper
         end
-    end
 
-    return S1
+        if Head_Simulation_lower == Max_Head_lower
+            S1 = HY.Eff[iMod,1]
+        elseif Head_Simulation_lower != Max_Head_lower    
+            eta = HY.Eff[iMod,1] / (Max_Head_lower * 9810)
+            S1 = eta * 9810 * Head_Simulation_lower
+        end 
+    end
+    
+    return S1   
 
 end 
-
-
-  # Set maximum discharge per segment (DisMaxSeg) and efficiency per segment (Eff), for each hydro module
-#=  NDSeg = zeros(Int, NMod)
-  MaxSeg = 10
-  DisMaxSeg = zeros(Float64, NMod, MaxSeg)
-  Eff = zeros(Float64, NMod, MaxSeg)
-  for iMod = 1:NMod
-    line = readline(f)
-    items = split(line, " ")
-    NDSeg[iMod] = parse(Int, items[1])
-    for iSeg = 1:NDSeg[iMod]
-      if (iSeg == 1)
-        DisMaxSeg[iMod, iSeg] = parse(Float64, items[1+iSeg*2])
-        Eff[iMod, iSeg] = parse(Float64, items[2]) / parse(Float64, items[3])
-      else
-        DisMaxSeg[iMod, iSeg] =
-          parse(Float64, items[1+iSeg*2]) - parse(Float64, items[1+(iSeg-1)*2])
-        Eff[iMod, iSeg] =
-          (parse(Float64, items[1+iSeg*2-1]) - parse(Float64, items[1+(iSeg-1)*2-1])) /
-          DisMaxSeg[iMod, iSeg]
-      end
-    end
-  end =#
-

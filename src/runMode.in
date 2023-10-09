@@ -40,7 +40,7 @@
 # Additional functionalities
     production_factors= true
     water_levels = true
-    head_variation = true
+#    head_variation = true
     general_plots= true
     save_excel = true
     error_evaluation = false

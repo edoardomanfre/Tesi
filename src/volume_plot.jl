@@ -35,7 +35,7 @@ function savePlots(InputParameters::InputParam)
                 concatenation_price[iMod, iScen, start_idx:end_idx] = ResultsSim.price[iMod, iScen, iStage, :]
                 concatenation_waterLevel_variations[iMod, iScen, start_idx:end_idx] = Results_Water_levels.water_level_variations[iMod, iScen, iStage, :]
                 concatenation_waterLevel[iMod, iScen, start_idx:end_idx] = Results_Water_levels.Water_levels_Simulation[iMod, iScen, iStage, :]
-                concatenation_head[iMod, iScen, start_idx:end_idx] = Results_Head.Water_Head_Simulation[iMod, iScen, iStage, :]
+#                concatenation_head[iMod, iScen, start_idx:end_idx] = Results_Head.head_evaluation[iMod, iScen, iStage, :]
             end
         end
     end
@@ -52,7 +52,7 @@ function savePlots(InputParameters::InputParam)
         Reservoir_volume = DataFrame()
         Reservoir_level = DataFrame()
         Variations_water = DataFrame()
-        Head = DataFrame()
+#        Head = DataFrame()
 
         for iStep = NStage * NStep
             for iMod = 1:HY.NMod
@@ -63,7 +63,7 @@ function savePlots(InputParameters::InputParam)
                 Reservoir_volume[!, "Reservoir_$iMod"] = concatenation_reservoir[iMod, i, :]
                 Reservoir_level[!, "Reservoir_$iMod"] = concatenation_waterLevel[iMod, i, :]
                 Variations_water[!, "Reservoir_$iMod"] = concatenation_waterLevel_variations[iMod, i, :]
-                Head[!, "Reservoir_$iMod"] = concatenation_head[iMod, i, :]
+#                Head[!, "Reservoir_$iMod"] = concatenation_head[iMod, i, :]
             end
         end
 
@@ -75,7 +75,7 @@ function savePlots(InputParameters::InputParam)
             Reservoir_level = (collect(DataFrames.eachcol(Reservoir_level)), DataFrames.names(Reservoir_level)),
             Variations_water = (collect(DataFrames.eachcol(Variations_water)), DataFrames.names(Variations_water)),
             Inflow = (collect(DataFrames.eachcol(Inflow)), DataFrames.names(Inflow)),
-            Head = (collect(DataFrames.eachcol(Head)), DataFrames.names(Head))
+#            Head = (collect(DataFrames.eachcol(Head)), DataFrames.names(Head))
         )
     end
 end
