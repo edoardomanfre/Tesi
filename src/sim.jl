@@ -114,18 +114,25 @@ function sim(                                  # Ora conosco per ogni settimana 
      # println("t:", t)
       Price = scenarios[iScen][t, 2] .* PriceScale[t,1:NStep]                   #Prezzo in quei N periodi (di TOTh) per lo scenario iScen, della settimana t      
       Head = head_evaluation(case::caseData, Reservoir,HY::HydroData,iScen,t,NStep)
-      S1 = efficiency_evaluation(HY::HydroData, Head::Head_data)
-      JuMP.set_normalized_coefficient(
-          SP.prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
-          SP.HY.Eff[iMod, 1], #Riguardare il punto - punto
-          S1,      
-        )
+      S1_upper, S1_lower = efficiency_evaluation(HY::HydroData, Head::Head_data)
 
       for iMod = 1:HY.NMod  # Per il numero di bacini(2)
 
         reservoir = 0
         for iStep = 1:NStep                                                     #Per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
           
+          JuMP.set_normalized_coefficient(
+            SP.prodeff[iMod = 1, iStep = 1:NStep],
+            SP.disSeg[iMod, 1, iStep], 
+            S1_upper,      
+          )
+
+          JuMP.set_normalized_coefficient(
+            SP.prodeff[iMod = 2, iStep = 1:NStep],
+            SP.disSeg[iMod, 1, iStep], 
+            S1_lower,     
+          )
+
           set_objective_coefficient(
             SP.model,                                                           #SP e' il modello
             SP.prod[iMod, iStep],                                               #Davanti alla variabile prod[iMod, iStep]= produzione(MW) nel bacino iMod allo step iStep(1:3)

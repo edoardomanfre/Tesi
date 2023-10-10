@@ -333,10 +333,8 @@ struct Head_data
   water_volumes_file::Any
   water_levels_file::Any
   NVolumes::Any
-  Water_levels_Simulation::Any
-  Head_Simulation_upper::Any 
-  Head_Simulation_lower::Any 
-  Max_Head_upper::Any 
-  Max_Head_lower::Any 
+  Head_upper::Any 
+  Head_lower::Any 
+  max_head::Any
 end
 
