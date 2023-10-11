@@ -78,7 +78,7 @@ function ReadHydroData(path)
     DisMaxSegPump=zeros(Float64,MaxSegPump)
     EffPump=zeros(Float64,MaxSegPump)
     Pump_direction=zeros(Int,2)
-  elseif Station_with_pump==1
+  elseif Station_with_pump==1 
     NDSegPump=parse(Int,items[1])
     for iSeg = 1:NDSegPump
       if (iSeg == 1)

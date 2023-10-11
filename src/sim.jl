@@ -122,13 +122,13 @@ function sim(                                  # Ora conosco per ogni settimana 
         for iStep = 1:NStep                                                     #Per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
           
           JuMP.set_normalized_coefficient(
-            SP.prodeff[iMod = 1, iStep = 1:NStep],
+            SP.prodeff[iMod, iStep],
             SP.disSeg[iMod, 1, iStep], 
             S1_upper,      
           )
 
           JuMP.set_normalized_coefficient(
-            SP.prodeff[iMod = 2, iStep = 1:NStep],
+            SP.prodeff[iMod, iStep],
             SP.disSeg[iMod, 1, iStep], 
             S1_lower,     
           )

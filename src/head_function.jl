@@ -52,7 +52,7 @@ function head_evaluation(
 
     for iMod=1:NMod
         line = readline(f)                              
-        max_head[iMod]=parse(Float64,1)            
+        max_head[iMod]=parse(Float64, strip(line))            
     end
     max_head; 
 
@@ -119,25 +119,29 @@ end
 
 function efficiency_evaluation(HY::HydroData, Head::Head_data)
 
+    @unpack (NMod) = HY
     @unpack (Head_upper,Head_lower,max_head) = Head
 
     S1_upper = 0
     S1_lower = 0
 
-    if Head_upper == max_head[1] 
-        S1_upper = HY.Eff[iMod,1] 
-    else
-        eta = HY.Eff[iMod,1] / (max_head[1] * 9810)
-        S1_upper = eta * 9810 * Head_upper
+    for iMod = 1:NMod
+
+        if Head_upper == max_head[1] 
+            S1_upper = HY.Eff[iMod,1] 
+        else
+            eta = HY.Eff[iMod,1] / (max_head[1] * 9810)
+            S1_upper = eta * 9810 * Head_upper
+        end
+
+        if Head_lower == max_head[2] 
+            S1_lower = HY.Eff[iMod,1]
+        else 
+            eta = HY.Eff[iMod,1] / (max_head[2] * 9810)
+            S1_lower = eta * 9810 * Head_lower
+        end 
+
     end
-
-    if Head_lower == max_head[2] 
-        S1_lower = HY.Eff[iMod,1]
-    else 
-        eta = HY.Eff[iMod,1] / (max_head[2] * 9810)
-        S1_lower = eta * 9810 * Head_lower
-    end 
-
     
     return S1_upper, S1_lower   
 
