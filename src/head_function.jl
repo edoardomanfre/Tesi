@@ -17,7 +17,6 @@ function head_evaluation(
     line = readline(f)
     items = split(line, " ")
     NMod = parse(Int, items[1]) #set number of modules
-    println("NMod = ", NMod)
     water_volumes_file=zeros(Float64,HY.NMod,21);
     water_levels_file=zeros(Float64,HY.NMod,21);
     max_head=zeros(Float64,HY.NMod);
@@ -110,8 +109,8 @@ function head_evaluation(
     end
 
     Head_upper = Level[1] - Level[2]
-    Head_lower = Level[2] - 460
-
+    Head_lower = Level[2] - 520
+    
     return Head_data(water_volumes_file,water_levels_file,NVolumes,Head_upper,Head_lower,max_head)
 
 end
@@ -119,29 +118,25 @@ end
 
 function efficiency_evaluation(HY::HydroData, Head::Head_data)
 
-    @unpack (NMod) = HY
+    @unpack (NMod,Eff) = HY
     @unpack (Head_upper,Head_lower,max_head) = Head
 
     S1_upper = 0
     S1_lower = 0
 
-    for iMod = 1:NMod
-
-        if Head_upper == max_head[1] 
-            S1_upper = HY.Eff[iMod,1] 
-        else
-            eta = HY.Eff[iMod,1] / (max_head[1] * 9810)
-            S1_upper = eta * 9810 * Head_upper
-        end
-
-        if Head_lower == max_head[2] 
-            S1_lower = HY.Eff[iMod,1]
-        else 
-            eta = HY.Eff[iMod,1] / (max_head[2] * 9810)
-            S1_lower = eta * 9810 * Head_lower
-        end 
-
+    if Head_upper == max_head[1] 
+        S1_upper = HY.Eff[1,1] 
+    else
+        eta = HY.Eff[1,1] / (max_head[1] * 9810)
+        S1_upper = eta * 9810 * Head_upper
     end
+
+    if Head_lower == max_head[2] 
+        S1_lower = HY.Eff[2,1]
+    else 
+        eta = HY.Eff[2,1] / (max_head[2] * 9810)
+        S1_lower = eta * 9810 * Head_lower
+    end 
     
     return S1_upper, S1_lower   
 

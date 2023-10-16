@@ -120,18 +120,22 @@ function sim(                                  # Ora conosco per ogni settimana 
 
         reservoir = 0
         for iStep = 1:NStep                                                     #Per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
-          
-          JuMP.set_normalized_coefficient(
-            SP.prodeff[iMod, iStep],
-            SP.disSeg[iMod, 1, iStep], 
-            S1_upper,      
-          )
 
-          JuMP.set_normalized_coefficient(
-            SP.prodeff[iMod, iStep],
-            SP.disSeg[iMod, 1, iStep], 
-            S1_lower,     
-          )
+          if iMod == 1
+            JuMP.set_normalized_coefficient(
+              SP.prodeff[iMod, iStep],
+              SP.disSeg[iMod, 1, iStep], 
+              S1_upper,      
+            )
+          end
+
+          if iMod == 2
+            JuMP.set_normalized_coefficient(
+              SP.prodeff[iMod, iStep],
+              SP.disSeg[iMod, 1, iStep], 
+              S1_lower,     
+            )
+          end
 
           set_objective_coefficient(
             SP.model,                                                           #SP e' il modello

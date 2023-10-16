@@ -19,7 +19,7 @@ function water_levels_evaluation(case::caseData, InputParameters::InputParam) #R
         line = readline(f)
         items = split(line, " ")
         NVolumes[iMod] = parse(Float64, items[1])
-        for n=1:5 #5=NVolumes[iMod]
+        for n=1:Int(NVolumes[iMod])
         water_volumes_file[iMod,n]=parse(Float64,items[1+n])
         end
     end
@@ -32,7 +32,7 @@ function water_levels_evaluation(case::caseData, InputParameters::InputParam) #R
     for iMod=1:NMod
         line = readline(f)
         items = split(line, " ")
-        for n=1:5
+        for n=1:Int(NVolumes[iMod])
         water_levels_file[iMod,n]=parse(Float64,items[n])
         end
     end
