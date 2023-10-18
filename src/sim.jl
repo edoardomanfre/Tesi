@@ -93,6 +93,8 @@ function sim(                                  # Ora conosco per ogni settimana 
  # Net_production=zeros(HY.NMod,NSimScen,NStage,NStep)                          #Produzione netta
 
   By_pass=zeros(HY.NMod,NSimScen,NStage,NStep)                                  #By pass variable for minimum environmental flow
+  Salto = zeros(HY.NMod,NSimScen,NStage)
+  Coefficiente = zeros(HY.NMod,NSimScen,NStage)
 
   if HY.NMod == 1
     gamma = zeros(NSimScen, NStage, NSeg[1])       #NSeg[1]                     #Genero una matrice (100x52x5) per solo 1 reservoir dei valori di gamma per la cobinazione convessa
@@ -114,8 +116,11 @@ function sim(                                  # Ora conosco per ogni settimana 
      # println("t:", t)
       Price = scenarios[iScen][t, 2] .* PriceScale[t,1:NStep]                   #Prezzo in quei N periodi (di TOTh) per lo scenario iScen, della settimana t      
       Head = head_evaluation(case::caseData, Reservoir,HY::HydroData,iScen,t,NStep)
+      Salto[1,iScen,t] = Head.Head_upper
+      Salto[2,iScen,t] = Head.Head_lower      
       S1_upper, S1_lower = efficiency_evaluation(HY::HydroData, Head::Head_data)
-
+      Coefficiente[1,iScen,t] = S1_upper
+      Coefficiente[2,iScen,t] = S1_lower      
       for iMod = 1:HY.NMod  # Per il numero di bacini(2)
 
         reservoir = 0
@@ -323,7 +328,7 @@ function sim(                                  # Ora conosco per ogni settimana 
 
             inflow[iMod,iScen,t,iStep]= StepFranc[t,iStep] .* scenarios[iScen][t, 1] * HY.Scale[iMod]
             
-            Reservoir_round[iMod,iScen,t,iStep] = round(Reservoir[iMod,iScen,t,iStep],digits=2)
+            Reservoir_round[iMod,iScen,t,iStep] = round(Reservoir[iMod,iScen,t,iStep],digits=8)
 
           end
         end
@@ -392,5 +397,7 @@ function sim(                                  # Ora conosco per ogni settimana 
     Pumping,
     #Net_production,
     By_pass,
+    Salto,
+    Coefficiente,
   )
 end

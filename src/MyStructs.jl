@@ -293,6 +293,8 @@ struct Results
   Pumping::Any
  # Net_production::Any
   By_pass::Any
+  Salto::Any
+  Coefficiente::Any
 end
 
 

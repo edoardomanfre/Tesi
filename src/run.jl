@@ -201,9 +201,7 @@ if runMode.save_excel
 
 end
 
-savePlots(InputParameters)
-
-#  Results_Head = head_evaluation(case, Reservoir,HY,iScen,t,NStep)
+savePlots(InputParameters, Result) 
 
 print(to)
 

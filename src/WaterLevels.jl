@@ -48,7 +48,7 @@ function water_levels_evaluation(case::caseData, InputParameters::InputParam) #R
             for iStage=1:NStage
                 for iStep=1:InputParameters.NStep
 
-                    for n=1:4  #NVolumes[iMod]-1
+                    for n=1:Int(NVolumes[iMod])-1
                         
                         if ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep] == water_volumes_file[iMod,n]
                             Water_levels_Simulation[iMod,iScen,iStage,iStep] = water_levels_file[iMod,n]
@@ -62,8 +62,8 @@ function water_levels_evaluation(case::caseData, InputParameters::InputParam) #R
 
                     end
                     
-                    if ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep] == water_volumes_file[iMod,5] 
-                        Water_levels_Simulation[iMod,iScen,iStage,iStep] = water_levels_file[iMod,5]
+                    if ResultsSim.Reservoir_round[iMod,iScen,iStage,iStep] == water_volumes_file[iMod,Int(NVolumes[iMod])] 
+                        Water_levels_Simulation[iMod,iScen,iStage,iStep] = water_levels_file[iMod,Int(NVolumes[iMod])]
                     end
 
                 end
