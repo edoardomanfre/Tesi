@@ -115,18 +115,18 @@ function sim(                                  # Ora conosco per ogni settimana 
     for t = 1:NStage                                                            #Calcolo per ogni settimana (cronologico)  
      # println("t:", t)
       Price = scenarios[iScen][t, 2] .* PriceScale[t,1:NStep]                   #Prezzo in quei N periodi (di TOTh) per lo scenario iScen, della settimana t      
-      Head = head_evaluation(case::caseData, Reservoir,HY::HydroData,iScen,t,NStep)
+#=      Head = head_evaluation(case,Reservoir,HY,iScen,t,NStep)
       Salto[1,iScen,t] = Head.Head_upper
       Salto[2,iScen,t] = Head.Head_lower      
-      S1_upper, S1_lower = efficiency_evaluation(HY::HydroData, Head::Head_data)
+      S1_upper, S1_lower = efficiency_evaluation(HY,Head)
       Coefficiente[1,iScen,t] = S1_upper
-      Coefficiente[2,iScen,t] = S1_lower      
+      Coefficiente[2,iScen,t] = S1_lower=#      
       for iMod = 1:HY.NMod  # Per il numero di bacini(2)
 
         reservoir = 0
         for iStep = 1:NStep                                                     #Per ogni step nella settimana (1:3) - aggiorno la funzione obiettivo con i relativi coefficienti
 
-          if iMod == 1
+#=          if iMod == 1
             JuMP.set_normalized_coefficient(
               SP.prodeff[iMod, iStep],
               SP.disSeg[iMod, 1, iStep], 
@@ -140,7 +140,7 @@ function sim(                                  # Ora conosco per ogni settimana 
               SP.disSeg[iMod, 1, iStep], 
               S1_lower,     
             )
-          end
+          end=#
 
           set_objective_coefficient(
             SP.model,                                                           #SP e' il modello
@@ -183,7 +183,7 @@ function sim(                                  # Ora conosco per ogni settimana 
           end
 
           if iMod==1 && ramping_constraints  &&  iStep>1    #Ramping constrains sono solo sul bacino superiore                                  #iMod==1 && 
-            SP= intra_volume_changes(SP,iMod,iScen,t,iStep,HY,Reservoir,NStep)
+            SP= intra_volume_changes(case::caseData,SP,iMod,iScen,t,iStep,HY,Reservoir,NStep)
           end
           
         end                                                                     #Finisco l'update per tutti gli STEP
@@ -217,7 +217,7 @@ function sim(                                  # Ora conosco per ogni settimana 
         end                                                                     #Per tutti gli scenari e tutte le settimane, aggiorno le variabili
         
         if iMod==1 && ramping_constraints                                                     
-          SP = initial_volume_changes(SP,iMod,iScen,t,HY,Reservoir)
+          SP = initial_volume_changes(case::caseData,SP,iMod,iScen,t,HY,Reservoir)
         end
  
       end                                                                                                     # UPDATE FOR ALL RESERVOIRS
@@ -397,7 +397,7 @@ function sim(                                  # Ora conosco per ogni settimana 
     Pumping,
     #Net_production,
     By_pass,
-    Salto,
-    Coefficiente,
+#    Salto,
+#    Coefficiente,
   )
 end

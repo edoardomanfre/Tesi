@@ -1,0 +1,16 @@
+# Number of constraints
+1
+
+#Module with constraint, first possible activation week, last activation week, last active week maxDisch, last active week noDecrease 
+2 0 23 38 38               
+
+#inflow activation level, Reservoir deactivation level, discharge limit
+1000 87.44 0
+
+# inflow dependent qMin
+#if true (1), qMin
+0 
+
+
+
+

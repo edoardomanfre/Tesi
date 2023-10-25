@@ -1,7 +1,7 @@
 # DEPENDENCE ON DOWNSTREAM WATER LEVEL
 
 function DeactivationPump_sim(SP,iScen,t,HY,Reservoir,limit,NStep)
- 
+
     reservoir = 0
 
     if t==1 
@@ -101,15 +101,25 @@ end
 
 # RAMPING CONSTRAINTS - 
 
-function intra_volume_changes(SP,iMod,iScen,t,iStep,HY,Reservoir,NStep)
+function intra_volume_changes(case::caseData,SP,iMod,iScen,t,iStep,HY,Reservoir,NStep)
+    
+    path=case.DataPath
+    cd(path)
+    f=open("Water_volumes_levels.dat")
+    line=readline(f)
 
-    Volume_changes= zeros(HY.NMod,4)
-    Volume_changes[1,:]=[0.2364 0.4815 0.638 0.7734]                     # 30-50 cm per day    2.3640 4.82 6.3828 7.7347
-    Volume_changes[2,:]=[0.132 0.1806 0.2106 0.255]                      # 30-50 cm per day    1.32 1.81 2.11 2.55
+    line = readline(f)
+    items = split(line, " ")
+    NMod = parse(Int, items[1]) #set number of modules
+    NVolumes=zeros(NMod);
+ 
+    Volume_changes= zeros(HY.NMod,Int(NVolumes[iMod])-1)
+    Volume_changes[1,:]=[0.0018 0.0042 0.0038 0.0042 0.005 0.005 0.008 0.01 0.01 0.01 0.012 0.014 0.016 0.014 0.012 0.022 0.022 0.022 0.022 0.026]                   
+    Volume_changes[2,:]=[0.005 0.00625 0.0055 0.007 0.00875 0.005 0.0065 0.0085 0.0075 0.01 0.01 0.0125]                    
 
-    water_volumes_file=zeros(HY.NMod,5)     # range
-    water_volumes_file[1,:]= [0.00 78.00 239.00 452.60 684.30]           # 684.1      0.00 78.00 239.00 452.60 684.30
-    water_volumes_file[2,:]= [0.00 21.90 52.00 87.10 104.30]             # 104.10     0.00 21.90 52.00 87.10 104.30
+    water_volumes_file=zeros(HY.NMod,Int(NVolumes[iMod]))     
+    water_volumes_file[1,:]= [0.00 0.09 0.30 0.49 0.70 0.95 1.20 1.60 2.10 2.60 3.10 3.70 4.40 5.20 5.90 6.50 7.60 8.70 9.80 10.90 12.20]        
+    water_volumes_file[2,:]= [0.00 0.20 0.45 0.67 0.95 1.30 1.50 1.76 2.10 2.40 2.80 3.20 3.70]           
 
 
     for n=1:size(Volume_changes)[2]
@@ -132,18 +142,28 @@ end
 
 
 
-function initial_volume_changes(SP,iMod,iScen,t,HY,Reservoir)
-   
-    Volume_changes= zeros(HY.NMod,4)
-    Volume_changes[1,:]=[0.2364 0.4815 0.638 0.7734] 
-    Volume_changes[2,:]=[0.132 0.1806 0.2106 0.255]  
+function initial_volume_changes(case::caseData,SP,iMod,iScen,t,HY,Reservoir)
+    
+    path=case.DataPath
+    cd(path)
+    f=open("Water_volumes_levels.dat")
+    line=readline(f)
 
-    water_volumes_file=zeros(HY.NMod,5)
-    water_volumes_file[1,:]= [0.00 78.00 239.00 452.60 684.30]
-    water_volumes_file[2,:]= [0.00 21.90 52.00 87.10 104.30] 
+    line = readline(f)
+    items = split(line, " ")
+    NMod = parse(Int, items[1]) #set number of modules
+    NVolumes=zeros(NMod);
+  
+    Volume_changes= zeros(HY.NMod,Int(NVolumes[iMod])-1)
+    Volume_changes[1,:]=[0.0018 0.0042 0.0038 0.0042 0.005 0.005 0.008 0.01 0.01 0.01 0.012 0.014 0.016 0.014 0.012 0.022 0.022 0.022 0.022 0.026]
+    Volume_changes[2,:]=[0.005 0.00625 0.0055 0.007 0.00875 0.005 0.0065 0.0085 0.0075 0.01 0.01 0.0125]  
+
+    water_volumes_file=zeros(HY.NMod,Int(NVolumes[iMod]))
+    water_volumes_file[1,:]= [0.00 0.09 0.30 0.49 0.70 0.95 1.20 1.60 2.10 2.60 3.10 3.70 4.40 5.20 5.90 6.50 7.60 8.70 9.80 10.90 12.20] 
+    water_volumes_file[2,:]= [0.00 0.20 0.45 0.67 0.95 1.30 1.50 1.76 2.10 2.40 2.80 3.20 3.70]  
 
 
-    for n=1:size(Volume_changes)[2]         #fino a 4
+    for n=1:size(Volume_changes)[2]       
         if iScen==1
             if t==1
                 if HY.ResInit0[iMod]>= water_volumes_file[iMod,n] && HY.ResInit0[iMod] < water_volumes_file[iMod,n+1]
@@ -175,15 +195,25 @@ function initial_volume_changes(SP,iMod,iScen,t,HY,Reservoir)
 end
 
 
-function ramping_constraints_SDP(SP,iMod,t,nfrom,HY,ResSeg,iStep)
+function ramping_constraints_SDP(case::caseData,SP,iMod,t,nfrom,HY,ResSeg,iStep)
+    
+    path=case.DataPath
+    cd(path)
+    f=open("Water_volumes_levels.dat")
+    line=readline(f)
 
-    Volume_changes= zeros(HY.NMod,4) #3cm variations
-    Volume_changes[1,:]=[0.2364 0.4815 0.638 0.7734]                             # 30-50 cm per day    2.3640 4.82 6.3828 7.7347
-    Volume_changes[2,:]=[0.132 0.1806 0.2106 0.255]                                 # 30-50 cm per day    1.32 1.81 2.11 2.55
+    line = readline(f)
+    items = split(line, " ")
+    NMod = parse(Int, items[1]) #set number of modules
+    NVolumes=zeros(NMod);
+ 
+    Volume_changes= zeros(HY.NMod,Int(NVolumes[iMod])-1) #3cm variations
+    Volume_changes[1,:]=[0.0018 0.0042 0.0038 0.0042 0.005 0.005 0.008 0.01 0.01 0.01 0.012 0.014 0.016 0.014 0.012 0.022 0.022 0.022 0.022 0.026]                           
+    Volume_changes[2,:]=[0.005 0.00625 0.0055 0.007 0.00875 0.005 0.0065 0.0085 0.0075 0.01 0.01 0.0125]                 
 
-    water_volumes_file=zeros(HY.NMod,5)
-    water_volumes_file[1,:]= [0.00 78.00 239.00 452.60 684.30]                #684.1      0.00 78.00 239.00 452.60 684.30
-    water_volumes_file[2,:]= [0.00 21.90 52.00 87.10 104.30]                    #104.10        0.00 21.90 52.00 87.10 104.30
+    water_volumes_file=zeros(HY.NMod,Int(NVolumes[iMod]))
+    water_volumes_file[1,:]= [0.00 0.09 0.30 0.49 0.70 0.95 1.20 1.60 2.10 2.60 3.10 3.70 4.40 5.20 5.90 6.50 7.60 8.70 9.80 10.90 12.20]               
+    water_volumes_file[2,:]= [0.00 0.20 0.45 0.67 0.95 1.30 1.50 1.76 2.10 2.40 2.80 3.20 3.70]                   
 
 
     for n=1:size(Volume_changes)[2]             # iterating from 1 to 4

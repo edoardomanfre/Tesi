@@ -59,6 +59,7 @@ struct HydroData
   Station_with_pump::Any
   NDSegPump::Any
   DisMaxSegPump::Any
+  PowMaxSegPump::Any
   EffPump::Any
   Pump_direction::Any
   N_min_flows::Any
@@ -199,6 +200,7 @@ struct StageProblemTwoRes
   q_min::Any
   disSeg::Any
   disSegPump::Any
+  powSegPump::Any
   by_pass::Any
   resbalInit::Any
   resbalStep::Any
@@ -218,6 +220,7 @@ struct StageProblemTwoRes
  # χ::Any
   maxRelease::Any
   maxReleasePump::Any 
+  maxPowerPump::Any
   minReservoirEnd::Any
   minReservoir::Any
   noDecrease_week::Any
@@ -293,8 +296,8 @@ struct Results
   Pumping::Any
  # Net_production::Any
   By_pass::Any
-  Salto::Any
-  Coefficiente::Any
+#  Salto::Any
+#  Coefficiente::Any
 end
 
 

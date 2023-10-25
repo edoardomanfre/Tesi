@@ -454,7 +454,7 @@ function update_state_dependent_input(
 
       # RAMPING CONSTRAINTS
       if iMod==1 && ramping_constraints
-        SP = ramping_constraints_SDP(SP,iMod,t,nfrom,HY,ResSeg,iStep)
+        SP = ramping_constraints_SDP(case::caseData,SP,iMod,t,nfrom,HY,ResSeg,iStep)
       end 
 
     end

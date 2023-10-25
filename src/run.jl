@@ -32,7 +32,7 @@ include("ProductionFactors.jl")
 include("WaterLevels.jl")
 include("ExcelSavings.jl")
 include("volume_plot.jl")
-include("head_function.jl")
+#include("head_function.jl")
 #include("Plots.jl")
 #include("ErrorEvaluation.jl")
 
@@ -201,8 +201,9 @@ if runMode.save_excel
 
 end
 
-savePlots(InputParameters, Result) 
+savePlots(InputParameters, ResultsSim) 
 
 print(to)
 
 
+   

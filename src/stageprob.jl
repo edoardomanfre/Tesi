@@ -52,6 +52,9 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   # Variable for pumping discharge
   @variable(M,0<=disSegPump[tSeg = 1:HY.NDSegPump, iStep = 1:NStep]<= HY.DisMaxSegPump[tSeg],base_name ="dsegpump")
 
+  #Variable for power pump
+  @variable(M,0<=powSegPump[tSeg = 1:HY.NDSegPump, iStep = 1:NStep]<= HY.PowMaxSegPump[tSeg],base_name ="psegpump")
+
   # Variabile By-pass per deflusso minimo vitale
   @variable(M,by_pass[iMod = 1:HY.NMod,iStep=1:NStep]>=0, base_name = "min_flow_bypass")
 
@@ -110,21 +113,8 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     res[iMod, iStep] >= HY.MaxRes[iMod] * 0
   )
 
-  # Lower reservoir volume constraint (slack with punishment)
-  #@constraint(
-  #  M,
-  #  minResPunish[iMod = 1, iStep = 1:NStep],
-  #  res[iMod, iStep] >= 1.15
-  #0.1)
 
   #Hydropower generation
-#  @constraint(
-#    M,
-#    prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
-#    prod[iMod, iStep] ==
-#    sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod]) #Da vedere perche NDSeg non è sempre uguale e io devo cambiare solo il primo. Quindi il for va fatto dal secondo iSeg all'ultimo, no per il primo che deve essere aggiornato
-#  )
-
   @constraint(
     M,
     prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
@@ -231,7 +221,13 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     M,
     maxReleasePump[iStep = 1:NStep],
     sum(disSegPump[tSeg, iStep] for tSeg = 1:HY.NDSegPump) <= sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump)
-    )
+  )
+
+  @constraint(
+    M,
+    maxPowerPump[iStep = 1:NStep],
+    sum(powSegPump[tSeg, iStep] for tSeg = 1:HY.NDSegPump) <= sum(HY.PowMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump)
+  )
 
   @constraint(M, minReservoirEnd[iMod = 1:HY.NMod, iStep = NStep], res[iMod, iStep] >= 0)
 
@@ -252,6 +248,7 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     q_min,
     disSeg,
     disSegPump,
+    powSegPump,
     by_pass,
     resbalInit,
     resbalStep,
@@ -271,6 +268,7 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     #χ,
     maxRelease,
     maxReleasePump,
+    maxPowerPump,
     minReservoirEnd,
     minReservoir,
     noDecrease_week,
