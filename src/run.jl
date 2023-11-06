@@ -18,6 +18,7 @@ using Random
 include("MyStructs.jl")
 include("setInputParameters.jl")
 include("stageprob.jl")
+include("stageprob_sim.jl")
 include("waterValueFunctions.jl")
 include("getResults.jl")
 #include("readInput.jl")
@@ -71,7 +72,7 @@ to = TimerOutput()
     AllSeg, ResSeg = twoResStateMatrix(NSeg, HY)
   else
     print("Segments can not be calculated for more than two reservoirs.")
-  end
+  end  
 
   #inflow = set_inflow(runMode, InputFromFile, case)
   #price, PriceScale = set_price(runMode, InputFromFile, case)
@@ -156,7 +157,7 @@ if runMode.simulate
     if runMode.parallellSim
       ResultsSim = paraSim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
     else
-       ResultsSim = sim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
+      ResultsSim = sim(InputParameters, SolverParameters, ResultsSDP, SimScen, runMode)
     end
   end #timer "SDP simulation"  
 

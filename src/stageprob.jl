@@ -52,9 +52,6 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
   # Variable for pumping discharge
   @variable(M,0<=disSegPump[tSeg = 1:HY.NDSegPump, iStep = 1:NStep]<= HY.DisMaxSegPump[tSeg],base_name ="dsegpump")
 
-  #Variable for power pump
-  @variable(M,0<=powSegPump[tSeg = 1:HY.NDSegPump, iStep = 1:NStep]<= HY.PowMaxSegPump[tSeg],base_name ="psegpump")
-
   # Variabile By-pass per deflusso minimo vitale
   @variable(M,by_pass[iMod = 1:HY.NMod,iStep=1:NStep]>=0, base_name = "min_flow_bypass")
 
@@ -223,12 +220,6 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     sum(disSegPump[tSeg, iStep] for tSeg = 1:HY.NDSegPump) <= sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump)
   )
 
-  @constraint(
-    M,
-    maxPowerPump[iStep = 1:NStep],
-    sum(powSegPump[tSeg, iStep] for tSeg = 1:HY.NDSegPump) <= sum(HY.PowMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump)
-  )
-
   @constraint(M, minReservoirEnd[iMod = 1:HY.NMod, iStep = NStep], res[iMod, iStep] >= 0)
 
   @constraint(M, minReservoir[iMod = 1:HY.NMod, iStep = 1:NStep], res[iMod, iStep] >= 0)
@@ -248,7 +239,6 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     q_min,
     disSeg,
     disSegPump,
-    powSegPump,
     by_pass,
     resbalInit,
     resbalStep,
@@ -268,7 +258,6 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     #χ,
     maxRelease,
     maxReleasePump,
-    maxPowerPump,
     minReservoirEnd,
     minReservoir,
     noDecrease_week,

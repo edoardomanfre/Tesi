@@ -59,7 +59,10 @@ struct HydroData
   Station_with_pump::Any
   NDSegPump::Any
   DisMaxSegPump::Any
+  DisPointPump::Any
   PowMaxSegPump::Any
+  DisPointTurb::Any
+  PowMaxSegTurb::Any
   EffPump::Any
   Pump_direction::Any
   N_min_flows::Any
@@ -200,7 +203,48 @@ struct StageProblemTwoRes
   q_min::Any
   disSeg::Any
   disSegPump::Any
+  by_pass::Any
+  resbalInit::Any
+  resbalStep::Any
+  positive_var::Any
+  negative_var::Any
+  Initial_volumevar_positive::Any
+  Initial_volumevar_negative::Any
+  prodeff::Any
+  #pumpdischarge::Any
+  pumpeff_up::Any
+  pumpeff_low::Any
+  alpha::Any
+  gamma::Any
+  AlphaCon::Any
+  beta_upper::Any # Per linearizzare in SDP
+  beta_lower::Any
+ # χ::Any
+  maxRelease::Any
+  maxReleasePump::Any 
+  minReservoirEnd::Any
+  minReservoir::Any
+  noDecrease_week::Any
+  minResPunish::Any
+end
+
+struct StageProblemTwoRes_sim
+  model::Any
+  res::Any
+  spill::Any
+  prod::Any
+  pump::Any
+  q_slack::Any
+  min_slack::Any
+  res_slack_pos::Any
+  res_slack_neg::Any
+  q_min::Any
+  disSeg::Any
+  disSegPump::Any
   powSegPump::Any
+  u_pump::Any
+  powSegTurb::Any
+  u_turb::Any
   by_pass::Any
   resbalInit::Any
   resbalStep::Any
@@ -221,6 +265,11 @@ struct StageProblemTwoRes
   maxRelease::Any
   maxReleasePump::Any 
   maxPowerPump::Any
+  l_p_seg::Any
+  u_p_seg::Any
+  maxPowerTurb::Any
+  l_t_seg::Any
+  u_t_seg::Any
   minReservoirEnd::Any
   minReservoir::Any
   noDecrease_week::Any
@@ -255,7 +304,32 @@ struct StageProblem
   noDecrease_week::Any
 end
 #  q_min::Any
-
+struct StageProblem_sim
+  model::Any
+  res::Any
+  spill::Any
+  prod::Any
+  q_slack::Any
+  min_slack:: Any
+# res_slack:: Any
+  q_min::Any
+  disSeg::Any
+  by_pass::Any
+  resbalInit::Any
+  resbalStep::Any
+  positive_var::Any
+  negative_var::Any
+  Initial_volumevar_positive::Any
+  Initial_volumevar_negative::Any
+  prodeff::Any
+  alpha::Any
+  gamma::Any
+  AlphaCon::Any
+  maxRelease::Any
+  minReservoirEnd::Any
+  minReservoir::Any
+  noDecrease_week::Any
+end
 # Results
 #-----------------------------------------------
 

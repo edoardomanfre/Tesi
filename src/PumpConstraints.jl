@@ -16,7 +16,8 @@ function DeactivationPump_sim(SP,iScen,t,HY,Reservoir,limit,NStep)
             elseif HY.ResInit0[2] > limit
                 for iStep=1:NStep
                     #JuMP.set_normalized_rhs(SP.pumpdischarge[tSeg,iStep],HY.DisMaxSegPump[tSeg]) 
-                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+#                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], HY.DisPointPump[2])
                     #SP= relax_disLimitPump(SP,NStep)
                     reservoir = HY.ResInit0[2]
                 end
@@ -32,7 +33,8 @@ function DeactivationPump_sim(SP,iScen,t,HY,Reservoir,limit,NStep)
             elseif Reservoir[2,iScen-1,end,end] > limit
                 for iStep=1:NStep
                     #JuMP.set_normalized_rhs(SP.pumpdischarge[tSeg,iStep],HY.DisMaxSegPump[tSeg]) 
-                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+#                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+                    JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], HY.DisPointPump[2])
                     reservoir = Reservoir[2,iScen-1,end,end]
                     #SP= relax_disLimitPump(SP,NStep)
                 end
@@ -49,7 +51,8 @@ function DeactivationPump_sim(SP,iScen,t,HY,Reservoir,limit,NStep)
         elseif Reservoir[2,iScen,t-1,end] > limit
             for iStep=1:NStep
                # JuMP.set_normalized_rhs(SP.pumpdischarge[tSeg,iStep],HY.DisMaxSegPump[tSeg])
-                JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+#                JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+                JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], HY.DisPointPump[2])
                 reservoir = Reservoir[2,iScen,t-1,end]
                 #SP= relax_disLimitPump(SP,NStep)
             end
@@ -88,12 +91,19 @@ function add_disLimitPump(SP, NStep)                                    # attivo
 end
 
 function relax_disLimitPump(SP,NStep)                                   # disattivo i vincoli sullo scarico
-    for iStep = 1:NStep
+#=    for iStep = 1:NStep
       set_normalized_rhs(
         SP.maxReleasePump[iStep],
         sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump),
       )
-    end
+    end=#
+    for iStep = 1:NStep
+        set_normalized_rhs(
+          SP.maxReleasePump[iStep],
+          HY.DisPointPump[2],
+        )
+      end
+      
     return SP
 end
 

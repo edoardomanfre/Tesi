@@ -250,6 +250,8 @@ function ReadHydroData(path)
   NDSeg = zeros(Int, NMod)
   MaxSeg = 10
   DisMaxSeg = zeros(Float64, NMod, MaxSeg)
+  DisPointTurb=zeros(Float64, NMod, MaxSeg)
+  PowMaxSegTurb=zeros(Float64, NMod, MaxSeg)
   Eff = zeros(Float64, NMod, MaxSeg)
   for iMod = 1:NMod
     line = readline(f)
@@ -257,14 +259,15 @@ function ReadHydroData(path)
     NDSeg[iMod] = parse(Int, items[1])
     for iSeg = 1:NDSeg[iMod]
       if (iSeg == 1)
-        DisMaxSeg[iMod, iSeg] = parse(Float64, items[1+iSeg*2])
+        DisMaxSeg[iMod, iSeg] = parse(Float64, items[3])
+        DisPointTurb[iMod, iSeg] = parse(Float64, items[3])
+        PowMaxSegTurb[iMod, iSeg] = parse(Float64, items[2])
         Eff[iMod, iSeg] = parse(Float64, items[2]) / parse(Float64, items[3])
       else
-        DisMaxSeg[iMod, iSeg] =
-          parse(Float64, items[1+iSeg*2]) - parse(Float64, items[1+(iSeg-1)*2])
-        Eff[iMod, iSeg] =
-          (parse(Float64, items[1+iSeg*2-1]) - parse(Float64, items[1+(iSeg-1)*2-1])) /
-          DisMaxSeg[iMod, iSeg]
+        DisMaxSeg[iMod, iSeg] = parse(Float64, items[1+iSeg*2]) - parse(Float64, items[1+(iSeg-1)*2])
+        DisPointTurb[iMod, iSeg] = parse(Float64, items[1+iSeg*2])
+        PowMaxSegTurb[iMod, iSeg] = parse(Float64, items[iSeg*2])
+        Eff[iMod, iSeg] = (parse(Float64, items[iSeg*2]) - parse(Float64, items[(iSeg-1)*2])) / DisMaxSeg[iMod, iSeg]
       end
     end
   end
@@ -301,8 +304,9 @@ function ReadHydroData(path)
   NDSegPump=zeros(Int)
   MaxSegPump=10
   DisMaxSegPump=zeros(Float64,MaxSegPump)
+  DisPointPump=zeros(Float64,MaxSegPump)
   PowMaxSegPump=zeros(Float64,MaxSegPump)
-#  EffPump=zeros(Float64,MaxSegPump)
+  EffPump=zeros(Float64,MaxSegPump)
   Pump_direction=zeros(Int,2)
 
   line=readline(f)
@@ -312,20 +316,23 @@ function ReadHydroData(path)
     NDSegPump=0
     MaxSegPump=1
     DisMaxSegPump=zeros(Float64,MaxSegPump)
+    DisPointPump=zeros(Float64,MaxSegPump)
     PowMaxSegPump=zeros(Float64,MaxSegPump)
-#    EffPump=zeros(Float64,MaxSegPump)
+    EffPump=zeros(Float64,MaxSegPump)
     Pump_direction=zeros(Int,2)
   elseif Station_with_pump==1
     NDSegPump=parse(Int,items[1])
     for iSeg = 1:NDSegPump
       if (iSeg == 1)
         DisMaxSegPump[iSeg] = parse(Float64, items[2])
-        PowMaxSegPump[iSeg] = parse(Float64, items[3]) 
-#        EffPump[iSeg] = parse(Float64, items[2]) / parse(Float64, items[3])
+        DisPointPump[iSeg] = parse(Float64, items[2])
+        PowMaxSegPump[iSeg] = parse(Float64, items[3])
+        EffPump[iSeg] = parse(Float64, items[2]) / parse(Float64, items[3])
       else
         DisMaxSegPump[iSeg] = parse(Float64, items[iSeg*2]) - parse(Float64, items[(iSeg-1)*2])
-        PowMaxSegPump[iSeg] = parse(Float64, items[iSeg*2+1]) - parse(Float64, items[(iSeg-1)*2+1])
-#        EffPump[iSeg] = DisMaxSegPump[iSeg]/(parse(Float64, items[iSeg*2+1]) - parse(Float64, items[(iSeg-1)*2+1])) 
+        DisPointPump[iSeg] = parse(Float64, items[iSeg*2])
+        PowMaxSegPump[iSeg] = parse(Float64, items[iSeg*2+1])
+        EffPump[iSeg] = DisMaxSegPump[iSeg]/(parse(Float64, items[iSeg*2+1]) - parse(Float64, items[(iSeg-1)*2+1])) 
       end
     end
     Pump_direction[1]=1
@@ -375,7 +382,7 @@ function ReadHydroData(path)
   close(f)
   println("closed file: ", path)
 
-  return HydroData(NMod, NUp, Eff, NDSeg, DisMaxSeg, MaxRes, Scale, ResInit0, qMin,Station_with_pump,NDSegPump,DisMaxSegPump,PowMaxSegPump,EffPump,Pump_direction,N_min_flows,Activation_weeks,Min_flows)
+  return HydroData(NMod, NUp, Eff, NDSeg, DisMaxSeg, MaxRes, Scale, ResInit0, qMin,Station_with_pump,NDSegPump,DisMaxSegPump,DisPointPump,PowMaxSegPump,DisPointTurb,PowMaxSegTurb,EffPump,Pump_direction,N_min_flows,Activation_weeks,Min_flows)
 end
 
 # Environmental constraint

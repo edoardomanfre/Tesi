@@ -88,13 +88,14 @@ function sim(                                  # Ora conosco per ogni settimana 
   disSeg = []                                                                   #Inizializzo un vettore nullo disSeg che poi andro' a riempire
                                                                                                     
 
-  disSegPump = zeros(NSimScen,NStage,NStep,HY.NDSegPump)                        #Ho una pompa sola
+#  disSegPump = zeros(NSimScen,NStage,NStep,HY.NDSegPump)                        #Ho una pompa sola
+  disSegPump = zeros(NSimScen,NStage,NStep)    
   Pumping = zeros(HY.NMod,NSimScen,NStage,NStep)                                #Potenza richiesta per pompaggio
  # Net_production=zeros(HY.NMod,NSimScen,NStage,NStep)                          #Produzione netta
 
   By_pass=zeros(HY.NMod,NSimScen,NStage,NStep)                                  #By pass variable for minimum environmental flow
-  Salto = zeros(HY.NMod,NSimScen,NStage)
-  Coefficiente = zeros(HY.NMod,NSimScen,NStage)
+#  Salto = zeros(HY.NMod,NSimScen,NStage)
+#  Coefficiente = zeros(HY.NMod,NSimScen,NStage)
 
   if HY.NMod == 1
     gamma = zeros(NSimScen, NStage, NSeg[1])       #NSeg[1]                     #Genero una matrice (100x52x5) per solo 1 reservoir dei valori di gamma per la cobinazione convessa
@@ -110,7 +111,7 @@ function sim(                                  # Ora conosco per ogni settimana 
   for iScen = 1:NSimScen                                                        #Comincio a calcolare i valori per i 100 scenari, cominciando da iScen=1 (ordine cronologico)
     earlyActive_maxDischarge = false
     add_dischargeLimitPump = false
-    SP = BuildProblem(InputParameters, HY, SolverParameters)                    #Function to build model in "stageprob"
+    SP = BuildProblem_sim(InputParameters, HY, SolverParameters)                    #Function to build model in "stageprob"
     print("Scen:", iScen)
     for t = 1:NStage                                                            #Calcolo per ogni settimana (cronologico)  
      # println("t:", t)
@@ -153,11 +154,11 @@ function sim(                                  # Ora conosco per ogni settimana 
             -NHoursStep * Price[iStep],                                         #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
           )
 
-          set_objective_coefficient(
+          #=set_objective_coefficient(
             SP.model,                                                           #Stessa cosa per la pompa: aggiorno la vraiabile prezzo
             SP.spill[iMod, iStep],                                                                             
             -Big,                                                               #Variabile che devo aggiungere (fattore_conversione*prezzo[iStep])
-          )
+          )=#
         
           JuMP.set_normalized_rhs(
               SP.minResPunish[iMod, iStep],                                       
@@ -310,10 +311,12 @@ function sim(                                  # Ora conosco per ogni settimana 
             end
             totDischarge[iMod, iScen, t, iStep] = sum(disSeg[iMod][iScen, t, iStep, :])
 
-            for tSeg=1:HY.NDSegPump
+#=            for tSeg=1:HY.NDSegPump
               disSegPump[iScen, t , iStep, tSeg] = JuMP.value(SP.disSegPump[tSeg,iStep])
             end
-            totPumped[iScen,t,iStep]=sum(disSegPump[iScen,t,iStep,:])
+            totPumped[iScen,t,iStep]=sum(disSegPump[iScen,t,iStep,:])=#
+            
+            disSegPump[iScen, t , iStep] = JuMP.value(SP.disSegPump[iStep])
 
             By_pass[iMod,iScen,t,iStep] =JuMP.value(SP.by_pass[iMod,iStep])                               # Variabile By_pass che tiene conto del deflusso minimo ambientale
 

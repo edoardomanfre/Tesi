@@ -68,6 +68,8 @@ function data_saving(runMode, SimScen, InputParameters)                         
         lower_volume = DataFrame()
         Level_variations_upper= DataFrame()         
         Level_variations_lower = DataFrame()
+        Spillage_upper = DataFrame()
+        Spillage_lower = DataFrame()
 
         prod_turbine = zeros(HY.NMod,NSimScen,NStage,NStep)
         prod_pump = zeros(HY.NMod,NSimScen,NStage,NStep)
@@ -101,6 +103,8 @@ function data_saving(runMode, SimScen, InputParameters)                         
                 lower_volume[!,"Scen_$iScen"] = ResultsSim.Reservoir[2,iScen,iWeek,:]
                 Level_variations_upper[!,"Scen_$iScen"] = Results_Water_levels.water_level_variations[1,iScen,iWeek,:]
                 Level_variations_lower[!,"Scen_$iScen"] = Results_Water_levels.water_level_variations[2,iScen,iWeek,:]
+                Spillage_upper[!,"Scen_$iScen"] = ResultsSim.Spillage[1,iScen,iWeek,:]
+                Spillage_lower[!,"Scen_$iScen"] = ResultsSim.Spillage[2,iScen,iWeek,:]
 
             #=if iWeek==1      
                 if iScen==1 
@@ -148,7 +152,9 @@ function data_saving(runMode, SimScen, InputParameters)                         
         upper_volume_Mm3 = (collect(DataFrames.eachcol(upper_volume)),DataFrames.names(upper_volume)),
         lower_volume_Mm3 = (collect(DataFrames.eachcol(lower_volume)),DataFrames.names(lower_volume)),
         water_var_Upper_m = (collect(DataFrames.eachcol(Level_variations_upper)),DataFrames.names(Level_variations_upper)),
-        water_var_Lower_m =(collect(DataFrames.eachcol(Level_variations_lower)),DataFrames.names(Level_variations_lower))
+        water_var_Lower_m =(collect(DataFrames.eachcol(Level_variations_lower)),DataFrames.names(Level_variations_lower)),
+        Spillage_upper_m3s =(collect(DataFrames.eachcol(Spillage_upper)),DataFrames.names(Spillage_upper)),
+        Spillage_lower_m3s =(collect(DataFrames.eachcol(Spillage_lower)),DataFrames.names(Spillage_lower))
         )
 
     end 

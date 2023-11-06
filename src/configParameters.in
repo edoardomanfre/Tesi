@@ -13,7 +13,7 @@
     NStep= 56
 
 #SDP parameters
-    conv = 0.001
+    conv = 0.1
     MaxIt = 100
 
 #number of simulation scenarios
