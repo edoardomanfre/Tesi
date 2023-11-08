@@ -1,10 +1,10 @@
 # Hydro plants
 # No. seg.; PQpoint[MW,m3/s] 
 ------------
-2          
-2 8.00 3.57 44.22 6.34 
-2 5.00 0.98 32.25 10.72 
-
+2 
+2 15.00 2.00 45.00 6.34         
+2 11.00 3.58 32.50 10.72 
+ 
 # Reservoirs
 # Storage capacity [Mm3]; Initial storage [Mm3]; Inflow ser. no.; Scaling; Connectivity discharge; min flow
 ------------

@@ -103,7 +103,8 @@ function sim(                                  # Ora conosco per ogni settimana 
     gamma = zeros(NSimScen, NStage, NSeg[1], NSeg[2])    #NSeg[1], NSeg[2]      #Matrice nulla 100x52x5x5 quando ho due reservoir
   end
   for iMod = 1:HY.NMod
-    append!(disSeg, [zeros(NSimScen, NStage, NStep, HY.NDSeg[iMod])])           #Aggiungo al vettore disSeg , due matrici nulle - una per ogni reservoir, con i dati dei segmenti
+    #append!(disSeg, [zeros(NSimScen, NStage, NStep, HY.NDSeg[iMod])])           #Aggiungo al vettore disSeg , due matrici nulle - una per ogni reservoir, con i dati dei segmenti
+    append!(disSeg, [zeros(NSimScen, NStage, NStep)])
   end
 
   MIP_counter = 0
@@ -306,10 +307,12 @@ function sim(                                  # Ora conosco per ogni settimana 
             Res_slack_pos[iMod,iScen,t,iStep] = JuMP.value(SP.res_slack_pos[iMod,iStep])
             Res_slack_neg[iMod,iScen,t,iStep] = JuMP.value(SP.res_slack_neg[iMod,iStep])
 
-            for iSeg = 1:HY.NDSeg[iMod]
+#=            for iSeg = 1:HY.NDSeg[iMod]
               disSeg[iMod][iScen, t, iStep, iSeg] = JuMP.value(SP.disSeg[iMod, iSeg, iStep])
             end
-            totDischarge[iMod, iScen, t, iStep] = sum(disSeg[iMod][iScen, t, iStep, :])
+            totDischarge[iMod, iScen, t, iStep] = sum(disSeg[iMod][iScen, t, iStep, :])=#
+
+            disSeg[iMod][iScen, t, iStep] = JuMP.value(SP.disSeg[iMod, iStep])
 
 #=            for tSeg=1:HY.NDSegPump
               disSegPump[iScen, t , iStep, tSeg] = JuMP.value(SP.disSegPump[tSeg,iStep])

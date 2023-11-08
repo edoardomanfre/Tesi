@@ -47,7 +47,7 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @variable(M, 0 <= res_slack_neg[iMod=1:HY.NMod, iStep = 1:NStep] <= Big, base_name =" res_slack_neg")
 
   # variabile per caratteristiche della turbina
-  @variable(M,0 <=disSeg[iMod = 1:HY.NMod, iSeg = 1:HY.NDSeg[iMod], iStep = 1:NStep] <= HY.DisMaxSeg[iMod, iSeg],base_name = "dseg")
+  @variable(M,0 <=disSeg[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.DisPointTurb[iMod, HY.NDSeg],base_name = "dseg")
 
   # Variable for pumping discharge
   @variable(M,0<=disSegPump[iStep = 1:NStep]<= HY.DisPointPump[HY.NDSegPump],base_name ="dsegpump")
@@ -58,11 +58,11 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   #Binary variable for pump
   @variable(M,u_pump[iStep = 1:NStep], Bin, base_name = "bin_pump")
 
-  #Variable for power turbine downstream
-  @variable(M,0<=powSegTurb[iMod = 1:HY:NMod, iStep = 1:NStep]<= HY.PowMaxSegTurb[iMod = 1:HY:NMod, HY.NDSeg],base_name ="psegturb")
+  #Variable for power turbine 
+  @variable(M,0<=powSegTurb[iMod = 1:HY.NMod, iStep = 1:NStep]<= HY.PowMaxSegTurb[iMod, HY.NDSeg],base_name ="psegturb")
 
-  #Binary variable for turbine downstream
-  @variable(M,u_turb[iMod = 1:HY:NMod, iStep = 1:NStep], Bin, base_name = "bin_turb")
+  #Binary variable for turbine
+  @variable(M,u_turb[iMod = 1:HY.NMod, iStep = 1:NStep], Bin, base_name = "bin_turb")
 
   # Variabile By-pass per deflusso minimo vitale
   @variable(M,by_pass[iMod = 1:HY.NMod,iStep=1:NStep]>=0, base_name = "min_flow_bypass")
@@ -94,7 +94,7 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
     res[iMod, 1] +                                                                                                          # Volume of reservoir iMod at step 1                                                                                                                                        # Water discharged by the turbine
     MM3Step * disSeg[iMod, 1] +     
     MM3Step * spi[iMod, 1] -                                                                                                # Water spilled by the reservoir
-    MM3Step * disSeg[uMod, 1] for uMod=1:HY.NUp[iMod] -
+    MM3Step * sum(disSeg[uMod, 1] for uMod=1:HY.NUp[iMod]) -
     MM3Step * sum(spi[uMod,1] for uMod=1:HY.NUp[iMod])-                                                                     # water spilled by usptream reservoir                                    # Water discharged by downstream reservoir from pumping (>0 if we are in upper reservoir, <0 if we are in lower reservoir)
     MM3Step * disSegPump[1] * HY.Pump_direction[iMod] + 
     MM3Step * by_pass[iMod,1] -
@@ -105,11 +105,9 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
 @constraint(
   M,resbalStep[iMod=1:HY.NMod, iStep = 2:NStep],
   res[iMod, iStep] - res[iMod, iStep-1] +
-#  MM3Step * sum(disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod]) +
   MM3Step * disSeg[iMod, iStep] +
   MM3Step * spi[iMod, iStep] -
-#  MM3Step * sum(disSeg[uMod,iSeg, iStep] for uMod=1:HY.NUp[iMod] for iSeg = 1:HY.NDSeg[uMod]) -
-  MM3Step * disSeg[uMod, iStep] for uMod=1:HY.NUp[iMod] -
+  MM3Step * sum(disSeg[uMod, iStep] for uMod=1:HY.NUp[iMod]) -
   MM3Step * sum(spi[uMod,iStep] for uMod=1:HY.NUp[iMod])- 
   MM3Step * (disSegPump[iStep]*HY.Pump_direction[iMod]) +
   MM3Step * by_pass[iMod,iStep] -
@@ -224,15 +222,13 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @constraint(
     M,
     maxRelease[iMod = 1:HY.NMod, iStep = 1:NStep],
-#    sum(disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod]) <= sum(HY.DisMaxSeg[iMod, iSeg] for iSeg = 1:HY.NDSeg[iMod])
-    disSeg[iMod, iStep] <= HY.DisPointTurb[iMod, 2] #Le due turbine devono avere le stesso numero di punti????
+    disSeg[iMod, iStep] <= HY.DisPointTurb[iMod, HY.NDSeg]
   )
 
  @constraint(
     M,
     maxReleasePump[iStep = 1:NStep],
-#    sum(disSegPump[tSeg, iStep] for tSeg = 1:HY.NDSegPump) <= sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump)
-    disSegPump[iStep] <= HY.DisPointPump[2]
+    disSegPump[iStep] <= HY.DisPointPump[HY.NDSegPump]
   )
 
   @constraint(
@@ -256,18 +252,18 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @constraint(
     M,
     maxPowerTurb[iMod = 1:HY.NMod, iStep = 1:NStep],
-    powSegTurb[iMod, iStep] <= disSeg>Turb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1]) + u_turb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 1]-HY.DisPointTurb[iMod, 1]*((HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1])))
+    powSegTurb[iMod, iStep] <= disSegTurb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1]) + u_turb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 1]-HY.DisPointTurb[iMod, 1]*((HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1])))
   )
 
   @constraint(
     M,
-    l_t_seg[iMod = 1:HY:NMod, iStep = 1:NStep],
+    l_t_seg[iMod = 1:HY.NMod, iStep = 1:NStep],
     disSegTurb[iMod, iStep] >= HY.DisPointTurb[iMod, 1]*u_turb[iMod, iStep]
   )
 
   @constraint(
     M,
-    u_t_seg[iMod = 1:HY:NMod, iStep = 1:NStep],
+    u_t_seg[iMod = 1:HY.NMod, iStep = 1:NStep],
     disSegTurb[iMod, iStep] <= HY.DisPointTurb[iMod, 2]*u_turb[iMod, iStep]
   )
 
@@ -377,7 +373,7 @@ function BuildStageProblem_sim(InputParameters::InputParam, HY::HydroData, Solve
     MM3Step * disSeg[iMod, 1] +
     MM3Step * spi[iMod, 1] -
     #MM3Step * sum(disSeg[uMod, iSeg, 1] for uMod = 1:HY.NUp[iMod] for iSeg = 1:HY.NDSeg[uMod]) -
-    MM3Step * disSeg[uMod, 1] for uMod = 1:HY.NUp[iMod] -
+    MM3Step * (disSeg[uMod, 1] for uMod = 1:HY.NUp[iMod]) -
     MM3Step * sum(spi[uMod, 1] for uMod = 1:HY.NUp[iMod]) +
     MM3Step * by_pass[iMod,1] -
     MM3Step * sum(by_pass[uMod,1] for uMod=1:HY.NUp[iMod])  == 0
@@ -392,7 +388,7 @@ function BuildStageProblem_sim(InputParameters::InputParam, HY::HydroData, Solve
     MM3Step * disSeg[iMod, iStep] +
     MM3Step * spi[iMod, iStep] -
 #    MM3Step * sum(disSeg[uMod, iSeg, iStep] for uMod = 1:HY.NUp[iMod] for iSeg = 1:HY.NDSeg[uMod]) -
-    MM3Step * disSeg[uMod, iStep] for uMod = 1:HY.NUp[iMod] -
+    MM3Step * (disSeg[uMod, iStep] for uMod = 1:HY.NUp[iMod]) -
     MM3Step * sum(spi[uMod, iStep] for uMod = 1:HY.NUp[iMod]) +
     MM3Step * by_pass[iMod,iStep] -
     MM3Step * sum(by_pass[uMod,iStep] for uMod=1:HY.NUp[iMod]) == 0

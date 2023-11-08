@@ -75,6 +75,7 @@ function DeactivationPump_SDP(SP,HY,ResSeg,limit,nfrom,NStep)         # iMod=2
             for iStep=1:NStep
                #JuMP.set_normalized_rhs(SP.pumpdischarge[tSeg,iStep],HY.DisMaxSegPump[tSeg])
                 JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], sum(HY.DisMaxSegPump[tSeg] for tSeg = 1:HY.NDSegPump))
+#                JuMP.set_normalized_rhs(SP.maxReleasePump[iStep], HY.DisPointPump[2])
                 #SP= relax_disLimitPump(SP,NStep)
             end
         end
