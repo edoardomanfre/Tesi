@@ -372,6 +372,8 @@ struct Results
   By_pass::Any
 #  Salto::Any
 #  Coefficiente::Any
+  u_pump::Any
+  u_turb::Any
 end
 
 

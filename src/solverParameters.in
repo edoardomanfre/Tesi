@@ -1,7 +1,7 @@
 #CPLEX
     CPX_PARAM_SCRIND = 0
     CPX_PARAM_PREIND = 0
-    CPXPARAM_MIP_Tolerances_MIPGap = 0.01
+    CPXPARAM_MIP_Tolerances_MIPGap = 1e-10
     CPX_PARAM_TILIM = 100
     CPX_PARAM_THREADS = 1 
 

@@ -116,7 +116,8 @@ function BuildStageProblemTwoRes(InputParameters::InputParam, HY::HydroData, Sol
     M,
     prodeff[iMod = 1:HY.NMod, iStep = 1:NStep],
     prod[iMod, iStep] ==
-    HY.Eff[iMod, 1] * disSeg[iMod, 1, iStep] + sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 2:HY.NDSeg[iMod]) 
+    sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 1:HY.NDSeg[iMod])
+    #HY.Eff[iMod, 1] * disSeg[iMod, 1, iStep] + sum(HY.Eff[iMod, iSeg] * disSeg[iMod, iSeg, iStep] for iSeg = 2:HY.NDSeg[iMod])  
   )
   
   #=

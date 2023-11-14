@@ -267,7 +267,7 @@ function ReadHydroData(path)
         DisMaxSeg[iMod, iSeg] = parse(Float64, items[1+iSeg*2]) - parse(Float64, items[1+(iSeg-1)*2])
         DisPointTurb[iMod, iSeg] = parse(Float64, items[1+iSeg*2])
         PowMaxSegTurb[iMod, iSeg] = parse(Float64, items[iSeg*2])
-        Eff[iMod, iSeg] = (parse(Float64, items[iSeg*2]) - parse(Float64, items[(iSeg-1)*2])) / DisMaxSeg[iMod, iSeg]
+        Eff[iMod, iSeg] = (parse(Float64, items[1+iSeg*2-1]) - parse(Float64, items[1+(iSeg-1)*2-1])) / DisMaxSeg[iMod, iSeg]
       end
     end
   end

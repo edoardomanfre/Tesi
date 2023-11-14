@@ -376,7 +376,7 @@ function BuildStageProblem_sim(InputParameters::InputParam, HY::HydroData, Solve
     MM3Step * (disSeg[uMod, 1] for uMod = 1:HY.NUp[iMod]) -
     MM3Step * sum(spi[uMod, 1] for uMod = 1:HY.NUp[iMod]) +
     MM3Step * by_pass[iMod,1] -
-    MM3Step * sum(by_pass[uMod,1] for uMod=1:HY.NUp[iMod])  == 0
+    MM3Step * sum(by_pass[uMod,1] for uMod=1:HY.NUp[iMod])  == 0 
   )#resbalInitRHS[iMod] + StepFranc*inf[iMod])
 
   #Reservoir balance within stage

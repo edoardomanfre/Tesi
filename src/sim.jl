@@ -313,6 +313,7 @@ function sim(                                  # Ora conosco per ogni settimana 
             totDischarge[iMod, iScen, t, iStep] = sum(disSeg[iMod][iScen, t, iStep, :])=#
 
             disSeg[iMod][iScen, t, iStep] = JuMP.value(SP.disSeg[iMod, iStep])
+            totDischarge[iMod, iScen, t, iStep] = sum(disSeg[iMod][iScen, t, iStep])
 
 #=            for tSeg=1:HY.NDSegPump
               disSegPump[iScen, t , iStep, tSeg] = JuMP.value(SP.disSegPump[tSeg,iStep])
@@ -320,6 +321,7 @@ function sim(                                  # Ora conosco per ogni settimana 
             totPumped[iScen,t,iStep]=sum(disSegPump[iScen,t,iStep,:])=#
             
             disSegPump[iScen, t , iStep] = JuMP.value(SP.disSegPump[iStep])
+            totPumped[iScen,t,iStep]=sum(disSegPump[iScen,t,iStep])
 
             By_pass[iMod,iScen,t,iStep] =JuMP.value(SP.by_pass[iMod,iStep])                               # Variabile By_pass che tiene conto del deflusso minimo ambientale
 
@@ -335,6 +337,9 @@ function sim(                                  # Ora conosco per ogni settimana 
             inflow[iMod,iScen,t,iStep]= StepFranc[t,iStep] .* scenarios[iScen][t, 1] * HY.Scale[iMod]
             
             Reservoir_round[iMod,iScen,t,iStep] = round(Reservoir[iMod,iScen,t,iStep],digits=8)
+
+            u_pump[iScen, t, iStep] = JuMP.value(SP.u_pump[iStep])
+            u_turb[iMod,iScen,t,iStep] = JuMP.value(SP.u_turb[iMod,iStep])
 
           end
         end
@@ -405,5 +410,7 @@ function sim(                                  # Ora conosco per ogni settimana 
     By_pass,
 #    Salto,
 #    Coefficiente,
+    u_pump,
+    u_turb,
   )
 end
