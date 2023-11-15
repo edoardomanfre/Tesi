@@ -96,6 +96,8 @@ function sim(                                  # Ora conosco per ogni settimana 
   By_pass=zeros(HY.NMod,NSimScen,NStage,NStep)                                  #By pass variable for minimum environmental flow
 #  Salto = zeros(HY.NMod,NSimScen,NStage)
 #  Coefficiente = zeros(HY.NMod,NSimScen,NStage)
+  u_pump = zeros(NSimScen, NStage,NStep)
+  u_turb = zeros(HY.NMod, NSimScen, NStage, NStep)
 
   if HY.NMod == 1
     gamma = zeros(NSimScen, NStage, NSeg[1])       #NSeg[1]                     #Genero una matrice (100x52x5) per solo 1 reservoir dei valori di gamma per la cobinazione convessa

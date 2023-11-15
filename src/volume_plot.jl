@@ -47,7 +47,7 @@ function savePlots(InputParameters::InputParam, ResultsSim::Results)
                 concatenation_u_turb[iMod, iScen, start_idx:end_idx] = ResultsSim.u_turb[iMod, iScen, iStage, :]
                 concatenation_spillage[iMod, iScen, start_idx:end_idx] = ResultsSim.Spillage[iMod, iScen, iStage, :]
                 concatenation_dischrge_turbine[iMod, iScen, start_idx:end_idx] = ResultsSim.totDischarge[iMod, iScen, iStage, :]
-                concatenation_discharge_pump[iMod, iScen, start_idx:end_idx] = ResultsSim.totPumped[iMod, iScen, iStage, :]
+                concatenation_discharge_pump[iMod, iScen, start_idx:end_idx] = ResultsSim.totPumped[iScen, iStage, :]
             end
         end
     end

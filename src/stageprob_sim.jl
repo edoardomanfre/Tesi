@@ -47,7 +47,7 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @variable(M, 0 <= res_slack_neg[iMod=1:HY.NMod, iStep = 1:NStep] <= Big, base_name =" res_slack_neg")
 
   # variabile per caratteristiche della turbina
-  @variable(M,0 <=disSeg[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.DisPointTurb[iMod, HY.NDSeg],base_name = "dseg")
+  @variable(M,0 <=disSeg[iMod = 1:HY.NMod, iStep = 1:NStep] <= HY.DisPointTurb[iMod, HY.NDSeg[iMod]],base_name = "dseg")
 
   # Variable for pumping discharge
   @variable(M,0<=disSegPump[iStep = 1:NStep]<= HY.DisPointPump[HY.NDSegPump],base_name ="dsegpump")
@@ -59,7 +59,7 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @variable(M,u_pump[iStep = 1:NStep], Bin, base_name = "bin_pump")
 
   #Variable for power turbine 
-  @variable(M,0<=powSegTurb[iMod = 1:HY.NMod, iStep = 1:NStep]<= HY.PowMaxSegTurb[iMod, HY.NDSeg],base_name ="psegturb")
+  @variable(M,0<=powSegTurb[iMod = 1:HY.NMod, iStep = 1:NStep]<= HY.PowMaxSegTurb[iMod, HY.NDSeg[iMod]],base_name ="psegturb")
 
   #Binary variable for turbine
   @variable(M,u_turb[iMod = 1:HY.NMod, iStep = 1:NStep], Bin, base_name = "bin_turb")
@@ -222,7 +222,7 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @constraint(
     M,
     maxRelease[iMod = 1:HY.NMod, iStep = 1:NStep],
-    disSeg[iMod, iStep] <= HY.DisPointTurb[iMod, HY.NDSeg]
+    disSeg[iMod, iStep] <= HY.DisPointTurb[iMod, HY.NDSeg[iMod]]
   )
 
  @constraint(
@@ -252,19 +252,19 @@ function BuildStageProblemTwoRes_sim(InputParameters::InputParam, HY::HydroData,
   @constraint(
     M,
     maxPowerTurb[iMod = 1:HY.NMod, iStep = 1:NStep],
-    powSegTurb[iMod, iStep] <= disSegTurb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1]) + u_turb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 1]-HY.DisPointTurb[iMod, 1]*((HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1])))
+    powSegTurb[iMod, iStep] <= disSeg[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1]) + u_turb[iMod, iStep]*(HY.PowMaxSegTurb[iMod, 1]-HY.DisPointTurb[iMod, 1]*((HY.PowMaxSegTurb[iMod, 2]-HY.PowMaxSegTurb[iMod, 1])/(HY.DisPointTurb[iMod, 2]-HY.DisPointTurb[iMod, 1])))
   )
 
   @constraint(
     M,
     l_t_seg[iMod = 1:HY.NMod, iStep = 1:NStep],
-    disSegTurb[iMod, iStep] >= HY.DisPointTurb[iMod, 1]*u_turb[iMod, iStep]
+    disSeg[iMod, iStep] >= HY.DisPointTurb[iMod, 1]*u_turb[iMod, iStep]
   )
 
   @constraint(
     M,
     u_t_seg[iMod = 1:HY.NMod, iStep = 1:NStep],
-    disSegTurb[iMod, iStep] <= HY.DisPointTurb[iMod, 2]*u_turb[iMod, iStep]
+    disSeg[iMod, iStep] <= HY.DisPointTurb[iMod, 2]*u_turb[iMod, iStep]
   )
 
   @constraint(M, minReservoirEnd[iMod = 1:HY.NMod, iStep = NStep], res[iMod, iStep] >= 0)
